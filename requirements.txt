@@ -1,0 +1,4 @@
+streamlit>=1.40
+alpaca-py>=0.43
+pandas>=2.0
+python-dotenv>=1.0

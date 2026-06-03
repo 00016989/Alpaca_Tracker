@@ -1,0 +1,71 @@
+"""Simple password gate for the dashboard.
+
+Set a password via the `ALDASH_PASSWORD` env var (or `.env`), or `app_password`
+in Streamlit secrets. If none is set, the app runs unprotected (fine for local
+use, NOT for a public deployment).
+
+Comparison is constant-time to avoid timing attacks.
+"""
+from __future__ import annotations
+
+import hmac
+import os
+
+import streamlit as st
+
+
+def _expected_password() -> str | None:
+    try:
+        pw = st.secrets.get("app_password", None)
+    except Exception:
+        pw = None
+    return pw or os.getenv("ALDASH_PASSWORD")
+
+
+def require_login() -> None:
+    """Block the app with a login form until the correct password is entered.
+
+    Call this once, early in the script. Does nothing if no password is set.
+    """
+    expected = _expected_password()
+
+    # No password configured -> unprotected (local dev convenience).
+    if not expected:
+        st.session_state["_unprotected"] = True
+        return
+
+    if st.session_state.get("auth_ok"):
+        return
+
+    # ---- render centered login ----
+    st.markdown(
+        '<div style="max-width:380px;margin:8vh auto 0 auto;">'
+        '<div style="font-size:26px;font-weight:800;color:#f1f5f9;">🔒 AL'
+        '<span style="color:#3b82f6;">Dash</span></div>'
+        '<div style="color:#8b97a7;font-size:13px;margin:6px 0 18px 0;">'
+        'Enter your password to access the dashboard.</div></div>',
+        unsafe_allow_html=True,
+    )
+    _, mid, _ = st.columns([1, 2, 1])
+    with mid:
+        with st.form("login_form"):
+            pw = st.text_input("Password", type="password", label_visibility="collapsed",
+                               placeholder="Password")
+            submitted = st.form_submit_button("Sign in", width="stretch", type="primary")
+        if submitted:
+            if hmac.compare_digest(str(pw), str(expected)):
+                st.session_state["auth_ok"] = True
+                st.rerun()
+            else:
+                st.error("Incorrect password.")
+    st.stop()
+
+
+def logout_button() -> None:
+    """Render a logout control in the sidebar (only if a password is in use)."""
+    if st.session_state.get("_unprotected"):
+        st.sidebar.caption("⚠️ No password set — app is unprotected.")
+        return
+    if st.sidebar.button("🔓 Log out", width="stretch"):
+        st.session_state["auth_ok"] = False
+        st.rerun()
