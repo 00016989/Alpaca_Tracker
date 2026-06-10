@@ -109,6 +109,32 @@ choice = st.session_state["account_choice"]
 selected = list(accounts) if choice == ALL_ACCOUNTS else [name_to_cfg.get(choice)]
 selected = [a for a in selected if a is not None] or list(accounts)
 
+# Quick add-account, right where the account list is.
+with st.sidebar.expander("➕  Add account"):
+    with st.form("sidebar_add_account", clear_on_submit=True):
+        new_name = st.text_input("Name", placeholder="e.g. Swing (Live)")
+        new_type = st.selectbox("Type", ["Paper", "Live"])
+        new_key = st.text_input("API key")
+        new_secret = st.text_input("API secret", type="password")
+        add_ok = st.form_submit_button("Add account", type="primary", width="stretch")
+    if add_ok:
+        is_paper = new_type == "Paper"
+        if not new_name.strip() or not new_key.strip() or not new_secret.strip():
+            st.warning("Fill in name, key and secret.")
+        elif new_name.strip() in {a.name for a in accounts}:
+            st.warning("That name already exists.")
+        else:
+            try:
+                AccountClient(AccountConfig(name=new_name.strip(), api_key=new_key.strip(),
+                                            api_secret=new_secret.strip(), paper=is_paper)).get_account()
+            except Exception as exc:
+                st.warning(f"Keys didn't work: {exc}")
+            else:
+                store.add_account(new_name.strip(), new_key.strip(), new_secret.strip(), is_paper)
+                st.success(f"Added {new_name.strip()}")
+                st.rerun()
+    st.caption("Manage/delete accounts in the ⚙️ Accounts tab.")
+
 st.sidebar.divider()
 auto = st.sidebar.toggle("Auto-refresh", value=True, help="Live-update positions & PnL")
 # Refresh interval in seconds; default 5 seconds.
