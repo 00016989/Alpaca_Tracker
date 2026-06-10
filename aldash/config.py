@@ -114,8 +114,13 @@ def load_accounts() -> List[AccountConfig]:
             break
 
     # Lazy import avoids a circular dependency (store imports AccountConfig).
-    from .store import load_stored_accounts
+    from .store import hidden_names, load_stored_accounts
 
+    hidden = hidden_names()
+    config = [a for a in config if a.name not in hidden]
     names = {a.name for a in config}
-    managed = [a for a in load_stored_accounts() if a.name not in names]
+    managed = [
+        a for a in load_stored_accounts()
+        if a.name not in names and a.name not in hidden
+    ]
     return config + managed

@@ -1,32 +1,50 @@
-"""JSON-backed store for accounts added through the dashboard.
+"""JSON-backed store for dashboard account management.
 
-Kept separate from .env / Streamlit secrets so the UI can add/remove accounts at
-runtime. The file (accounts.json) holds API secrets, so it is git-ignored.
+Two things live in accounts.json (git-ignored, holds secrets):
+  - "managed": accounts added through the dashboard (fully deletable)
+  - "hidden":  names of config-based accounts (.env / secrets) the user hid
 
-Note: on Streamlit Community Cloud the filesystem is ephemeral — accounts added
-here persist until the app reboots/redeploys. For permanent accounts, add them to
-Streamlit secrets instead.
+Config-based accounts can't be removed from a file at runtime (especially on
+Streamlit Cloud), so "deleting" one just hides it — and it can be restored.
+
+Note: on Streamlit Community Cloud the filesystem is ephemeral, so changes here
+persist only until the app reboots/redeploys. For permanent accounts use secrets.
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
+from typing import List, Set
 
 from .config import AccountConfig
 
 STORE_PATH = Path(__file__).resolve().parent.parent / "accounts.json"
 
 
-def load_stored_accounts() -> List[AccountConfig]:
+def _read() -> dict:
     if not STORE_PATH.exists():
-        return []
+        return {"managed": [], "hidden": []}
     try:
         data = json.loads(STORE_PATH.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
-        return []
+        return {"managed": [], "hidden": []}
+    # Migrate the legacy format (a bare list of managed accounts).
+    if isinstance(data, list):
+        return {"managed": data, "hidden": []}
+    if isinstance(data, dict):
+        data.setdefault("managed", [])
+        data.setdefault("hidden", [])
+        return data
+    return {"managed": [], "hidden": []}
+
+
+def _write(data: dict) -> None:
+    STORE_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def load_stored_accounts() -> List[AccountConfig]:
     out: List[AccountConfig] = []
-    for e in data:
+    for e in _read()["managed"]:
         try:
             out.append(
                 AccountConfig(
@@ -42,22 +60,44 @@ def load_stored_accounts() -> List[AccountConfig]:
     return out
 
 
-def _write(accounts: List[AccountConfig]) -> None:
-    data = [
-        {"name": a.name, "api_key": a.api_key, "api_secret": a.api_secret, "paper": a.paper}
-        for a in accounts
-    ]
-    STORE_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
+def hidden_names() -> Set[str]:
+    return set(_read().get("hidden", []))
 
 
 def add_account(name: str, api_key: str, api_secret: str, paper: bool) -> None:
-    """Add (or replace by name) a dashboard-managed account."""
-    accounts = [a for a in load_stored_accounts() if a.name != name]
-    accounts.append(AccountConfig(name=name, api_key=api_key, api_secret=api_secret,
-                                  paper=paper, managed=True))
-    _write(accounts)
+    data = _read()
+    data["managed"] = [a for a in data["managed"] if a.get("name") != name]
+    data["managed"].append(
+        {"name": name, "api_key": api_key, "api_secret": api_secret, "paper": paper}
+    )
+    data["hidden"] = [h for h in data.get("hidden", []) if h != name]  # un-hide if needed
+    _write(data)
 
 
 def delete_account(name: str) -> None:
-    """Remove a dashboard-managed account by name."""
-    _write([a for a in load_stored_accounts() if a.name != name])
+    """Remove a dashboard-managed account entirely."""
+    data = _read()
+    data["managed"] = [a for a in data["managed"] if a.get("name") != name]
+    _write(data)
+
+
+def hide_account(name: str) -> None:
+    """Hide a config-based account (restorable)."""
+    data = _read()
+    if name not in data.get("hidden", []):
+        data.setdefault("hidden", []).append(name)
+    _write(data)
+
+
+def unhide_account(name: str) -> None:
+    data = _read()
+    data["hidden"] = [h for h in data.get("hidden", []) if h != name]
+    _write(data)
+
+
+def remove(account: AccountConfig) -> None:
+    """Delete a managed account, or hide a config-based one."""
+    if account.managed:
+        delete_account(account.name)
+    else:
+        hide_account(account.name)

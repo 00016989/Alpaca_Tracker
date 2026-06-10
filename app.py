@@ -100,10 +100,30 @@ if st.sidebar.button(f"★  All accounts  ·  {len(accounts)}", key="accbtn_all"
 for a in accounts:
     badge = "🟡 Paper" if a.paper else "🔴 Live"
     active = st.session_state["account_choice"] == a.name
-    if st.sidebar.button(f"{a.name}  ·  {badge}", key=f"accbtn_{a.name}", width="stretch",
-                         type="primary" if active else "secondary"):
+    col_sel, col_del = st.sidebar.columns([5, 1])
+    if col_sel.button(f"{a.name}  ·  {badge}", key=f"accbtn_{a.name}", width="stretch",
+                      type="primary" if active else "secondary"):
         st.session_state["account_choice"] = a.name
         st.rerun()
+    if col_del.button("🗑️", key=f"trash_{a.name}", width="stretch",
+                      help=f"Delete {a.name}"):
+        st.session_state["pending_delete"] = a.name
+        st.rerun()
+
+    # Two-step confirm so a live account isn't removed by accident.
+    if st.session_state.get("pending_delete") == a.name:
+        note = "Removes it permanently." if a.managed else "Hides it (restore in ⚙️ Accounts)."
+        st.sidebar.caption(f"Delete **{a.name}**? {note}")
+        cy, cn = st.sidebar.columns(2)
+        if cy.button("✓ Delete", key=f"cfm_{a.name}", type="primary", width="stretch"):
+            store.remove(a)
+            if st.session_state.get("account_choice") == a.name:
+                st.session_state["account_choice"] = ALL_ACCOUNTS
+            st.session_state["pending_delete"] = None
+            st.rerun()
+        if cn.button("Cancel", key=f"cnl_{a.name}", width="stretch"):
+            st.session_state["pending_delete"] = None
+            st.rerun()
 
 choice = st.session_state["account_choice"]
 selected = list(accounts) if choice == ALL_ACCOUNTS else [name_to_cfg.get(choice)]
@@ -650,19 +670,27 @@ def render_accounts_admin():
         src = "added here" if a.managed else "from .env / secrets"
         col1.markdown(f"**{a.name}** · {badge}  \n<span style='color:#8b97a7;font-size:12px'>{src}</span>",
                       unsafe_allow_html=True)
-        if a.managed:
-            if col2.button("🗑️ Delete", key=f"del_{a.name}", width="stretch"):
-                store.delete_account(a.name)
-                if st.session_state.get("account_choice") == a.name:
-                    st.session_state["account_choice"] = ALL_ACCOUNTS
-                st.success(f"Removed “{a.name}”.")
-                st.rerun()
-        else:
-            col2.caption("🔒 config")
+        if col2.button("🗑️ Delete", key=f"del_{a.name}", width="stretch"):
+            store.remove(a)
+            if st.session_state.get("account_choice") == a.name:
+                st.session_state["account_choice"] = ALL_ACCOUNTS
+            st.success(f"{'Removed' if a.managed else 'Hid'} “{a.name}”.")
+            st.rerun()
 
-    if not any(a.managed for a in accounts):
-        st.caption("Config-based accounts can't be deleted here — remove them from your "
-                   "`.env` / Streamlit secrets. Accounts you add above can be deleted.")
+    # Restore any config accounts that were hidden.
+    hidden = sorted(store.hidden_names())
+    if hidden:
+        st.divider()
+        ui.label("Hidden accounts")
+        st.caption("These config accounts are hidden from the dashboard. Restore to show them again.")
+        for name in hidden:
+            h1, h2 = st.columns([5, 1])
+            h1.markdown(f"**{name}**  \n<span style='color:#8b97a7;font-size:12px'>hidden</span>",
+                        unsafe_allow_html=True)
+            if h2.button("↩️ Restore", key=f"restore_{name}", width="stretch"):
+                store.unhide_account(name)
+                st.success(f"Restored “{name}”.")
+                st.rerun()
 
 
 # ──────────────────────────────────────────────────────────────────────────
