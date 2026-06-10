@@ -32,6 +32,7 @@ class AccountConfig:
     api_key: str
     api_secret: str
     paper: bool
+    managed: bool = False  # True = added via dashboard (stored in accounts.json)
 
     @property
     def env_label(self) -> str:
@@ -98,13 +99,23 @@ def _is_configured(a: AccountConfig) -> bool:
 
 
 def load_accounts() -> List[AccountConfig]:
-    """Return configured accounts from the first source that has real keys.
+    """Return all accounts: config-based (.env / secrets) + dashboard-managed.
 
-    We filter placeholders *within* each source so a leftover template
+    We filter placeholders *within* each config source so a leftover template
     secrets.toml (all YOUR_… keys) doesn't shadow a real .env, and vice-versa.
+    Dashboard-added accounts (accounts.json) are merged on top; on a name clash
+    the config-based account wins.
     """
+    config: List[AccountConfig] = []
     for source in (_from_streamlit, _from_env):
         configured = [a for a in source() if _is_configured(a)]
         if configured:
-            return configured
-    return []
+            config = configured
+            break
+
+    # Lazy import avoids a circular dependency (store imports AccountConfig).
+    from .store import load_stored_accounts
+
+    names = {a.name for a in config}
+    managed = [a for a in load_stored_accounts() if a.name not in names]
+    return config + managed

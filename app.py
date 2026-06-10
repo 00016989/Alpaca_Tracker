@@ -8,7 +8,7 @@ import pandas as pd
 import streamlit as st
 
 from aldash import format as fmt
-from aldash import ui
+from aldash import store, ui
 from aldash.auth import logout_button, require_login
 from aldash.client import AccountClient
 from aldash.config import AccountConfig, load_accounts
@@ -111,11 +111,11 @@ selected = [a for a in selected if a is not None] or list(accounts)
 
 st.sidebar.divider()
 auto = st.sidebar.toggle("Auto-refresh", value=True, help="Live-update positions & PnL")
-# Refresh interval in seconds; default 5 minutes.
-_INTERVALS = [30, 60, 120, 300, 600, 900]
+# Refresh interval in seconds; default 5 seconds.
+_INTERVALS = [5, 10, 30, 60, 300, 600]
 _fmt_int = lambda s: f"{s}s" if s < 60 else f"{s // 60}m"
 interval = st.sidebar.select_slider(
-    "Refresh every", options=_INTERVALS, value=300, disabled=not auto, format_func=_fmt_int,
+    "Refresh every", options=_INTERVALS, value=5, disabled=not auto, format_func=_fmt_int,
 )
 if st.sidebar.button("🔄 Refresh now", width="stretch"):
     st.rerun()
@@ -198,8 +198,8 @@ def render():
 
     st.write("")
 
-    tab_pos, tab_orders, tab_log, tab_trade, tab_news = st.tabs(
-        ["📊 Positions", "🧾 Open Orders", "📒 Trade Log", "🛒 Trade", "📰 News"]
+    tab_pos, tab_orders, tab_log, tab_trade, tab_news, tab_acct = st.tabs(
+        ["📊 Positions", "🧾 Open Orders", "📒 Trade Log", "🛒 Trade", "📰 News", "⚙️ Accounts"]
     )
 
     with tab_pos:
@@ -212,6 +212,8 @@ def render():
         render_trade()
     with tab_news:
         render_news(account_data)
+    with tab_acct:
+        render_accounts_admin()
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -577,6 +579,64 @@ def render_news(account_data: list[dict]):
             + "</div>",
             unsafe_allow_html=True,
         )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Accounts tab — add / remove accounts from the dashboard
+# ──────────────────────────────────────────────────────────────────────────
+def render_accounts_admin():
+    ui.label("Add an account")
+    st.caption("Keys are validated against Alpaca before saving, then stored locally "
+               "in `accounts.json` (git-ignored).")
+
+    with st.form("add_account_form", clear_on_submit=True):
+        c1, c2 = st.columns([2, 1])
+        name = c1.text_input("Account name", placeholder="e.g. Swing (Live)")
+        acct_type = c2.selectbox("Type", ["Paper", "Live"])
+        key = st.text_input("API key")
+        secret = st.text_input("API secret", type="password")
+        submitted = st.form_submit_button("➕ Add account", type="primary", width="stretch")
+
+    if submitted:
+        paper = acct_type == "Paper"
+        if not name.strip() or not key.strip() or not secret.strip():
+            st.error("Fill in name, API key and API secret.")
+        elif name.strip() in {a.name for a in accounts}:
+            st.error(f"An account named “{name.strip()}” already exists.")
+        else:
+            try:  # validate the keys actually work before saving
+                test = AccountClient(AccountConfig(name=name.strip(), api_key=key.strip(),
+                                                   api_secret=secret.strip(), paper=paper))
+                acct = test.get_account()
+                equity = float(getattr(acct, "equity", 0) or 0)
+            except Exception as exc:
+                st.error(f"Couldn't connect with those keys: {exc}")
+            else:
+                store.add_account(name.strip(), key.strip(), secret.strip(), paper)
+                st.success(f"Added “{name.strip()}” — equity {fmt.money(equity)}.")
+                st.rerun()
+
+    st.divider()
+    ui.label("Your accounts")
+    for a in accounts:
+        col1, col2 = st.columns([5, 1])
+        badge = "🟡 Paper" if a.paper else "🔴 Live"
+        src = "added here" if a.managed else "from .env / secrets"
+        col1.markdown(f"**{a.name}** · {badge}  \n<span style='color:#8b97a7;font-size:12px'>{src}</span>",
+                      unsafe_allow_html=True)
+        if a.managed:
+            if col2.button("🗑️ Delete", key=f"del_{a.name}", width="stretch"):
+                store.delete_account(a.name)
+                if st.session_state.get("account_choice") == a.name:
+                    st.session_state["account_choice"] = ALL_ACCOUNTS
+                st.success(f"Removed “{a.name}”.")
+                st.rerun()
+        else:
+            col2.caption("🔒 config")
+
+    if not any(a.managed for a in accounts):
+        st.caption("Config-based accounts can't be deleted here — remove them from your "
+                   "`.env` / Streamlit secrets. Accounts you add above can be deleted.")
 
 
 # ──────────────────────────────────────────────────────────────────────────
