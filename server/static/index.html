@@ -105,7 +105,7 @@
   .live-flag{font-size:11px;color:var(--faint);margin-top:4px;display:flex;align-items:center;gap:6px;justify-content:flex-end}
   .live-flag .d{width:6px;height:6px;border-radius:50%;background:var(--gain);animation:pulse 1.8s infinite}
 
-  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
   .kpi{padding:16px 17px;border-radius:var(--radius);border:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;gap:9px;position:relative;overflow:hidden;transition:border-color .15s}
   .kpi:hover{border-color:var(--line-strong)}
   .kpi .k-lbl{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:600;display:flex;align-items:center;gap:7px}
@@ -143,7 +143,7 @@
   .tab:hover{color:var(--text)}
   .tab.active{color:var(--text);border-bottom-color:var(--brand)}
 
-  .pstats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  .pstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
   .pstat{padding:15px 17px;border-radius:var(--radius);border:1px solid var(--line);background:var(--panel-2)}
   .pstat .p-lbl{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:9px}
   .pstat .p-val{font-family:var(--mono);font-size:21px;font-weight:600;letter-spacing:-.02em}
@@ -432,7 +432,6 @@ function render(d){
   el("kpis").innerHTML=`
     ${kpi('feature','M12 2v20M5 9h9a3 3 0 0 1 0 6H7','Total equity',money(k.equity),pct(k.today_pct),cls(k.today))}
     ${kpi('','M3 17l6-6 4 4 8-8M21 7v6h-6','Floating PNL','<span class="'+cls(k.floating)+'">'+signed(k.floating)+'</span>',pct(k.float_pct),cls(k.floating))}
-    ${kpi('','M12 7v5l3 2','Today’s PNL','<span class="'+cls(k.today)+'">'+signed(k.today)+'</span>',pct(k.today_pct),cls(k.today))}
     ${kpi('','M3 6h18M3 10h18','Cash',money(k.cash),'available','faint')}
     ${kpi('','M4 19V5M9 19V9M14 19v-6M19 19v-9','Open positions',String(k.positions),'across '+k.n_accounts+' account(s)','faint')}`;
 
@@ -470,9 +469,7 @@ function kpi(extra,icon,lbl,val,sub,subcls){
 function renderPositions(d){
   const s=d.pstats;
   let stats=`<div class="pstats">
-    ${pstat('Open positions',String(s.open),'','')}
-    ${pstat('Total exposure',money(s.exposure),'','')}
-    ${pstat('Floating PNL','<span class="'+cls(s.floating)+'">'+signed(s.floating)+'</span>',s.winning+' / '+s.total+' winning',cls(s.floating))}
+    ${pstat('Total exposure',money(s.exposure),s.winning+' / '+s.total+' winning',cls(s.floating))}
     ${pstat('Risk at SL','<span class="loss">'+signed(s.risk)+'</span>','if all stops hit','loss')}
     ${pstat('Reward at TP','<span class="gain">'+signed(s.reward)+'</span>','if all targets hit','gain')}
   </div>`;
