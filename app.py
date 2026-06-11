@@ -79,6 +79,24 @@ def cached_realized_pnl(name: str, key: str, secret: str, paper: bool,
     return sum(t.pnl for t in fifo_round_trips(fills))
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def cached_equity_series(name: str, key: str, secret: str, paper: bool) -> list:
+    """Intraday equity points for the sparkline (cached, empty on failure)."""
+    try:
+        return get_client(name, key, secret, paper).get_equity_series()
+    except Exception:
+        return []
+
+
+def combine_series(serieses: list) -> list:
+    """Sum several equity series element-wise, aligned on their last N points."""
+    usable = [s for s in serieses if len(s) >= 2]
+    if not usable:
+        return []
+    m = min(len(s) for s in usable)
+    return [sum(s[-m:][i] for s in usable) for i in range(m)]
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Sidebar
 # ──────────────────────────────────────────────────────────────────────────
@@ -197,12 +215,8 @@ logout_button()
 def render():
     live = sum(1 for a in selected if not a.paper)
     paper = sum(1 for a in selected if a.paper)
-    ui.header(
-        f"{len(selected)} account(s) · "
-        f"<span style='color:#ff6b75;font-weight:600'>{live} live</span> · "
-        f"<span style='color:#fbbf24;font-weight:600'>{paper} paper</span><br>"
-        f"<span style='font-size:11px'>Live trading dashboard</span>"
-    )
+    updated = f"refreshing every {_fmt_int(interval)}" if auto else "auto-refresh paused"
+    ui.header(live, paper, updated)
 
     if not selected:
         st.info("Select at least one account in the sidebar.")
@@ -220,7 +234,7 @@ def render():
     per_account_metrics = []
     for d in account_data:
         if d["error"] or d["account"] is None:
-            per_account_metrics.append((d["cfg"], None, None, None, None))
+            per_account_metrics.append({"cfg": d["cfg"], "equity": None})
             continue
         acct = d["account"]
         cfg = d["cfg"]
@@ -244,28 +258,57 @@ def render():
         total_float_pl += float_pl
         total_day_pl += day_pl
         n_positions += len(rows)
-        per_account_metrics.append((cfg, equity, float_pl, balance, cash))
+        per_account_metrics.append({
+            "cfg": cfg, "equity": equity, "float_pl": float_pl,
+            "balance": balance, "cash": cash, "day_pl": day_pl, "last_equity": last_equity,
+        })
 
     day_pct = (total_day_pl / (total_equity - total_day_pl) * 100.0) if (total_equity - total_day_pl) else 0.0
     float_pct = (total_float_pl / (total_equity - total_float_pl) * 100.0) if (total_equity - total_float_pl) else 0.0
+    n_acct = sum(1 for m in per_account_metrics if m["equity"] is not None)
 
     ui.kpi_row([
-        ui.kpi_card("Total Equity", fmt.money(total_equity)),
-        ui.kpi_card("Floating PnL", fmt.money(total_float_pl), total_float_pl, fmt.pct(float_pct)),
-        ui.kpi_card("Today's PnL", fmt.money(total_day_pl), total_day_pl, fmt.pct(day_pct)),
-        ui.kpi_card("Cash", fmt.money(total_cash)),
-        ui.kpi_card("Open Positions", str(n_positions)),
+        ui.kpi_card("Total Equity", fmt.money(total_equity), total_day_pl, fmt.pct(day_pct), ic="account_balance"),
+        ui.kpi_card("Floating PnL", fmt.money(total_float_pl), total_float_pl, fmt.pct(float_pct), ic="trending_up"),
+        ui.kpi_card("Today's PnL", fmt.money(total_day_pl), total_day_pl, fmt.pct(day_pct), ic="schedule"),
+        ui.kpi_card("Cash", fmt.money(total_cash), None, "available", ic="account_balance_wallet"),
+        ui.kpi_card("Open Positions", str(n_positions), None,
+                    f"across {n_acct} account(s)", ic="bar_chart"),
     ])
+
+    # ---- selected-account hero with equity sparkline ---------------------
+    ok = [m for m in per_account_metrics if m["equity"] is not None]
+    if ok:
+        if choice == ALL_ACCOUNTS or len(ok) > 1:
+            h_name, h_paper = ("All accounts" if choice == ALL_ACCOUNTS else f"{len(ok)} accounts"), None
+            h_eq, h_bal, h_fl, h_pct = total_equity, sum(m["balance"] for m in ok), total_float_pl, day_pct
+            series = combine_series([cached_equity_series(m["cfg"].name, m["cfg"].api_key,
+                                                          m["cfg"].api_secret, m["cfg"].paper) for m in ok])
+        else:
+            m = ok[0]
+            cfg = m["cfg"]
+            h_name, h_paper = cfg.name, cfg.paper
+            h_eq, h_bal, h_fl = m["equity"], m["balance"], m["float_pl"]
+            denom = m["equity"] - m["day_pl"]
+            h_pct = (m["day_pl"] / denom * 100.0) if denom else 0.0
+            series = cached_equity_series(cfg.name, cfg.api_key, cfg.api_secret, cfg.paper)
+
+        ui.label("Selected account")
+        ui.account_hero(
+            h_name, h_paper, fmt.money(h_eq), fmt.money(h_bal), h_fl, fmt.money(h_fl),
+            ui.sparkline(series), h_pct, fmt.pct(h_pct),
+        )
 
     # per-account strip
     ui.label("Accounts")
     cards = []
-    for cfg, equity, float_pl, balance, cash in per_account_metrics:
-        if equity is None:
+    for m in per_account_metrics:
+        cfg = m["cfg"]
+        if m["equity"] is None:
             cards.append(ui.account_card(cfg.name, "—", "—", 0, "error", cfg.paper))
         else:
-            cards.append(ui.account_card(cfg.name, fmt.money(equity), fmt.money(balance),
-                                         float_pl, fmt.money(float_pl), cfg.paper))
+            cards.append(ui.account_card(cfg.name, fmt.money(m["equity"]), fmt.money(m["balance"]),
+                                         m["float_pl"], fmt.money(m["float_pl"]), cfg.paper))
     ui.account_row(cards)
 
     for d in account_data:
@@ -320,43 +363,8 @@ def render_positions(account_data: list[dict]):
         ui.kpi_card("Reward at TP", fmt.money(total_reward), total_reward, "if all targets hit"),
     ])
 
-    # SL/TP cell: dollar gain/loss on top, price underneath.
-    def sltp_cell(price, amount):
-        if price is None or amount is None:
-            return ('<span class="dim">—</span>', "r")
-        cls = ui.signed_class(amount)
-        return (
-            f'<span class="{cls}" style="font-weight:700">{fmt.money(amount)}</span>'
-            f'<br><span class="dim" style="font-size:11px">@ {fmt.price(price)}</span>',
-            "r",
-        )
-
-    headers = [
-        ("Account", "l"), ("Ticker", "l"), ("Side", "l"), ("Qty", "r"),
-        ("Entry", "r"), ("Current", "r"), ("Worth", "r"),
-        ("Loss if SL", "r"), ("Gain if TP", "r"), ("R:R", "r"),
-        ("Float PnL", "r"), ("PnL %", "r"),
-    ]
-    rows = []
-    for r in all_rows:
-        badge = ('<span class="badge-l">LONG</span>' if r.side == "long"
-                 else '<span class="badge-s">SHORT</span>')
-        rr = f"{r.risk_reward:.2f}" if r.risk_reward is not None else "—"
-        rows.append([
-            (r.account, "l"),
-            (f'<span class="tk">{r.symbol}</span>', "l"),
-            (badge, "l"),
-            (f"{abs(r.qty):,.2f}", "r"),
-            (fmt.price(r.avg_entry), "r"),
-            (fmt.price(r.current_price), "r"),
-            (fmt.money(r.market_value), "r"),
-            sltp_cell(r.stop_loss, r.sl_amount),
-            sltp_cell(r.take_profit, r.tp_amount),
-            (rr, "r"),
-            (f'<span class="{ui.signed_class(r.unrealized_pl)}">{fmt.money(r.unrealized_pl)}</span>', "r"),
-            (f'<span class="{ui.signed_class(r.unrealized_plpc)}">{fmt.pct(r.unrealized_plpc)}</span>', "r"),
-        ])
-    ui.render_table(headers, rows)
+    paper_map = {a.name: a.paper for a in selected}
+    ui.render_positions_table(all_rows, paper_map)
 
     missing = [r.symbol for r in all_rows if r.stop_loss is None or r.take_profit is None]
     if missing:
@@ -367,7 +375,7 @@ def render_positions(account_data: list[dict]):
     cc1, cc2 = st.columns([3, 1], vertical_alignment="bottom")
     label_to_row = {f"{r.account} · {r.symbol} ({fmt.money(r.market_value)})": r for r in all_rows}
     pick = cc1.selectbox("Position", list(label_to_row.keys()), label_visibility="collapsed")
-    if cc2.button("Close position", type="secondary", width='stretch'):
+    if cc2.button("Close position", key="close_pos_btn", type="secondary", width='stretch'):
         row = label_to_row[pick]
         cfg = next(a for a in selected if a.name == row.account)
         try:

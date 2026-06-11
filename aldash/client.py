@@ -83,6 +83,20 @@ class AccountClient:
         req = GetOrdersRequest(status=QueryOrderStatus.ALL, nested=True, limit=limit)
         return self.trading.get_orders(filter=req)
 
+    def get_equity_series(self, period: str = "1D", timeframe: str = "5Min") -> List[float]:
+        """Intraday equity points for a sparkline (empty list on any failure)."""
+        try:
+            from alpaca.trading.requests import GetPortfolioHistoryRequest
+            req = GetPortfolioHistoryRequest(
+                period=period, timeframe=timeframe,
+                intraday_reporting="market_hours", pnl_reset="per_day",
+            )
+            ph = self.trading.get_portfolio_history(history_filter=req)
+            raw = getattr(ph, "equity", None) or []
+            return [float(x) for x in raw if x is not None]
+        except Exception:
+            return []
+
     def get_news(self, symbols: Optional[List[str]] = None, limit: int = 20) -> list:
         start = datetime.now(timezone.utc) - timedelta(days=5)
         req = NewsRequest(

@@ -80,6 +80,7 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 .acct-tag { font-size:9.5px; font-weight:700; padding:3px 8px; border-radius:6px; letter-spacing:.5px; }
 .acct-tag.live { background:rgba(244,82,95,.16); color:#ff6b75; }
 .acct-tag.paper{ background:rgba(245,158,11,.16); color:#fbbf24; }
+.acct-tag.all  { background:var(--accent-weak); color:var(--accent); }
 .acct-eq { font-size:21px; font-weight:800; color:var(--text); margin-top:9px; line-height:1.1; letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
 .acct-eq-label { color:var(--text-3); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; margin-top:2px; }
 .acct-foot { display:flex; gap:10px; margin-top:12px; padding-top:11px; border-top:1px solid var(--border); }
@@ -250,6 +251,121 @@ table.dtbl tbody tr:last-child td { border-bottom:none; }
 .sl-val { color:var(--neg); font-weight:600; }
 .tp-val { color:var(--pos); font-weight:600; }
 .dim { color:var(--text-3); }
+
+/* ---------- material icons (inline, monochrome) ---------- */
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block');
+.msym { font-family:'Material Symbols Rounded'; font-weight:400; font-style:normal;
+  line-height:1; vertical-align:-3px; -webkit-font-feature-settings:'liga';
+  -webkit-font-smoothing:antialiased; font-size:16px; }
+
+/* ---------- header (rich) ---------- */
+.hd { display:flex; align-items:center; justify-content:space-between;
+  padding:16px 22px; border-radius:18px; margin-bottom:20px;
+  background:linear-gradient(135deg,#18202b 0%,#10211b 100%);
+  border:1px solid var(--border); box-shadow:var(--shadow-sm); }
+.hd-l { display:flex; align-items:center; gap:14px; }
+.hd-mark { width:52px; height:52px; border-radius:14px; display:flex; align-items:center;
+  justify-content:center; background:linear-gradient(135deg,#10b981,#047857);
+  box-shadow:0 4px 16px rgba(16,185,129,.32); }
+.hd-name { font-size:23px; font-weight:800; letter-spacing:-.5px; color:var(--text); line-height:1.1; }
+.hd-name span { color:var(--accent); }
+.hd-tag { color:var(--text-3); font-size:12.5px; margin-top:2px; }
+.hd-r { text-align:right; }
+.hd-counts { font-size:13px; color:var(--text-2); display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+.hd-pill { font-size:10.5px; font-weight:700; letter-spacing:.5px; padding:2px 8px; border-radius:20px; }
+.hd-pill.live { background:rgba(244,82,95,.16); color:#ff6b75; }
+.hd-pill.paper { background:rgba(245,158,11,.16); color:#fbbf24; }
+.hd-stream { font-size:11.5px; color:var(--text-3); margin-top:7px; }
+.hd-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--pos);
+  margin-right:5px; vertical-align:middle; animation:pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+/* ---------- KPI label icon ---------- */
+.kpi-label .msym { font-size:15px; margin-right:5px; color:var(--text-3); vertical-align:-2px; }
+
+/* ---------- selected-account hero ---------- */
+.hero { display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:center;
+  background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent);
+  border-radius:16px; padding:18px 22px; box-shadow:var(--shadow-sm); margin-bottom:8px; }
+.hero.live { border-left-color:var(--neg); } .hero.paper { border-left-color:var(--amber); }
+.hero-top { display:flex; align-items:center; gap:10px; }
+.hero-name { font-size:16px; font-weight:800; color:var(--text); }
+.hero-eqlabel { color:var(--text-3); font-size:10.5px; font-weight:600; text-transform:uppercase;
+  letter-spacing:.7px; margin:14px 0 2px; }
+.hero-eq { font-size:42px; font-weight:800; letter-spacing:-1.2px; color:var(--text);
+  line-height:1.05; font-variant-numeric:tabular-nums; }
+.hero-foot { display:flex; gap:34px; margin-top:14px; }
+.hero-stat .k { color:var(--text-3); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; }
+.hero-stat .v { font-size:17px; font-weight:700; margin-top:3px; font-variant-numeric:tabular-nums; color:var(--text); }
+.hero-chart { position:relative; }
+.hero-charttop { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.hero-charttop .lbl { color:var(--text-3); font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.7px; }
+
+/* ---------- positions (rich rows) ---------- */
+.ptbl { border:1px solid var(--border); border-radius:16px; overflow:hidden;
+  box-shadow:var(--shadow-sm); background:var(--surface); margin:6px 0 12px; }
+.ptbl-head, .ptbl-row { display:grid;
+  grid-template-columns: 1.4fr .7fr .55fr .8fr .8fr .95fr 2.5fr 1fr .65fr;
+  align-items:center; column-gap:18px; }
+.ptbl-head { background:var(--surface-2); border-bottom:1px solid var(--border);
+  padding:11px 18px; color:var(--text-3); font-size:10px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.6px; }
+.ptbl-head .r, .ptbl-row .r { text-align:right; }
+.ptbl-row { padding:14px 18px; border-bottom:1px solid var(--border); font-size:13.5px;
+  color:var(--text); font-variant-numeric:tabular-nums; }
+.ptbl-row:last-child { border-bottom:none; }
+.ptbl-row:hover { background:var(--surface-2); }
+.p-sym { font-weight:800; font-size:15px; color:var(--text); }
+.p-sub { color:var(--text-3); font-size:11px; margin-top:1px; }
+.p-badge { display:inline-flex; align-items:center; gap:3px; padding:3px 9px; border-radius:7px;
+  font-size:11px; font-weight:700; }
+.p-badge.long { background:var(--accent-weak); color:var(--accent); }
+.p-badge.short { background:rgba(244,82,95,.16); color:#ff6b75; }
+.p-badge .msym { font-size:13px; vertical-align:-2px; }
+
+/* risk:reward bar */
+.rr { padding:0 6px; }
+.rr-topline { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; font-size:11.5px; }
+.rr-ratio { font-weight:800; color:var(--text); }
+.rr-ratio span { color:var(--text-3); font-weight:600; font-size:10px; margin-left:3px; }
+.rr-amts { font-weight:700; font-variant-numeric:tabular-nums; }
+.rr-track { position:relative; height:7px; border-radius:6px;
+  background:linear-gradient(90deg,#f4525f 0%,#f59e0b 50%,#16c784 100%); }
+.rr-mark { position:absolute; top:-3px; width:3px; height:13px; border-radius:2px;
+  background:#fff; box-shadow:0 0 0 2px var(--surface), 0 1px 4px rgba(0,0,0,.5); transform:translateX(-50%); }
+.rr-scale { display:flex; justify-content:space-between; margin-top:5px; font-size:10px; color:var(--text-3);
+  font-variant-numeric:tabular-nums; }
+.rr-scale .now { color:var(--text-2); font-weight:600; }
+.rr-none { color:var(--text-3); font-size:11.5px; }
+
+/* destructive close-position button */
+[class*="st-key-close_pos_btn"] button { background:rgba(244,82,95,.14) !important;
+  border-color:rgba(244,82,95,.45) !important; color:#ff6b75 !important; }
+[class*="st-key-close_pos_btn"] button:hover { background:var(--neg) !important;
+  border-color:var(--neg) !important; color:#fff !important; }
+[class*="st-key-close_pos_btn"] button p { color:inherit !important; }
+
+/* ---------- sidebar account dots + tags ---------- */
+section[data-testid="stSidebar"] [class*="st-key-accbtn_live_"] button,
+section[data-testid="stSidebar"] [class*="st-key-accbtn_paper_"] button {
+  position:relative; padding-left:32px !important; border-left:1px solid var(--border) !important; }
+section[data-testid="stSidebar"] [class*="st-key-accbtn_live_"] button::before,
+section[data-testid="stSidebar"] [class*="st-key-accbtn_paper_"] button::before {
+  content:""; position:absolute; left:15px; top:50%; transform:translateY(-50%);
+  width:8px; height:8px; border-radius:50%; }
+section[data-testid="stSidebar"] [class*="st-key-accbtn_live_"] button::before { background:var(--neg); }
+section[data-testid="stSidebar"] [class*="st-key-accbtn_paper_"] button::before { background:var(--amber); }
+section[data-testid="stSidebar"] [class*="st-key-accbtn_live_"] button::after,
+section[data-testid="stSidebar"] [class*="st-key-accbtn_paper_"] button::after {
+  position:absolute; right:14px; top:50%; transform:translateY(-50%);
+  font-size:9px; font-weight:700; letter-spacing:.6px; }
+section[data-testid="stSidebar"] [class*="st-key-accbtn_live_"] button::after { content:"LIVE"; color:var(--neg); }
+section[data-testid="stSidebar"] [class*="st-key-accbtn_paper_"] button::after { content:"PAPER"; color:var(--amber); }
+/* selected account: emerald tint instead of solid fill */
+section[data-testid="stSidebar"] .stButton > button[kind*="primary"] {
+  background:var(--accent-weak) !important; border-color:var(--accent) !important;
+  border-left:3px solid var(--accent) !important; color:var(--text) !important; box-shadow:none !important; }
+section[data-testid="stSidebar"] .stButton > button[kind*="primary"] p { color:var(--text) !important; }
 </style>
 """
 
@@ -287,12 +403,26 @@ def wordmark(size_px: int = 24, idn: str = "h") -> str:
     )
 
 
-def header(subtitle_html: str) -> None:
+def icon(name: str) -> str:
+    """Inline Material Symbols icon (monochrome, inherits color)."""
+    return f'<span class="msym">{name}</span>'
+
+
+def header(n_live: int, n_paper: int, updated: str = "live") -> None:
+    n = n_live + n_paper
+    pills = ""
+    if n_live:
+        pills += f'<span class="hd-pill live">● {n_live} LIVE</span>'
+    if n_paper:
+        pills += f'<span class="hd-pill paper">● {n_paper} PAPER</span>'
     st.markdown(
-        f'<div class="app-header">'
-        f'<div class="brand">{wordmark(24, "hdr")}</div>'
-        f'<div class="sub">{subtitle_html}</div>'
-        f'</div>',
+        f'<div class="hd"><div class="hd-l">'
+        f'<div class="hd-mark">{logo_svg(34, "hdr")}</div>'
+        f'<div><div class="hd-name">AL<span>Dash</span></div>'
+        f'<div class="hd-tag">Live trading dashboard</div></div></div>'
+        f'<div class="hd-r"><div class="hd-counts">{n} account(s) {pills}</div>'
+        f'<div class="hd-stream"><span class="hd-dot"></span>Streaming · {updated}</div>'
+        f'</div></div>',
         unsafe_allow_html=True,
     )
 
@@ -304,9 +434,11 @@ def _sub(value: Optional[float], text: str) -> str:
     return f'<div class="kpi-sub {cls}">{text}</div>'
 
 
-def kpi_card(label: str, value: str, sub_value: Optional[float] = None, sub_text: Optional[str] = None) -> str:
+def kpi_card(label: str, value: str, sub_value: Optional[float] = None,
+             sub_text: Optional[str] = None, ic: Optional[str] = None) -> str:
+    icon_html = icon(ic) if ic else ""
     return (
-        f'<div class="kpi-card"><div class="kpi-label">{label}</div>'
+        f'<div class="kpi-card"><div class="kpi-label">{icon_html}{label}</div>'
         f'<div class="kpi-value">{value}</div>{_sub(sub_value, sub_text)}</div>'
     )
 
@@ -340,6 +472,126 @@ def account_row(cards: Iterable[str]) -> None:
 
 def label(text: str) -> None:
     st.markdown(f'<div class="sec-label">{text}</div>', unsafe_allow_html=True)
+
+
+def _money_signed(v: float) -> str:
+    return f"{'+' if v >= 0 else '-'}${abs(v):,.2f}"
+
+
+def sparkline(values, width: int = 440, height: int = 116, idn: str = "s") -> str:
+    """Area + line SVG sparkline from a list of equity values."""
+    vals = [float(v) for v in (values or [])]
+    if len(vals) < 2:
+        return '<div class="rr-none" style="padding:38px 0;text-align:center">No intraday equity yet.</div>'
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1.0
+    n = len(vals)
+    pad = 7
+    w, h = width, height
+    xs = [pad + i * (w - 2 * pad) / (n - 1) for i in range(n)]
+    ys = [pad + (1 - (v - lo) / rng) * (h - 2 * pad) for v in vals]
+    line = "M " + " L ".join(f"{x:.1f} {y:.1f}" for x, y in zip(xs, ys))
+    area = line + f" L {xs[-1]:.1f} {h - pad:.1f} L {xs[0]:.1f} {h - pad:.1f} Z"
+    col = "#16c784" if vals[-1] >= vals[0] else "#f4525f"
+    return (
+        f'<svg width="100%" height="{h}" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
+        f'xmlns="http://www.w3.org/2000/svg" style="display:block">'
+        f'<defs><linearGradient id="sp{idn}" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0" stop-color="{col}" stop-opacity=".30"/>'
+        f'<stop offset="1" stop-color="{col}" stop-opacity="0"/></linearGradient></defs>'
+        f'<path d="{area}" fill="url(#sp{idn})"/>'
+        f'<path d="{line}" fill="none" stroke="{col}" stroke-width="2" '
+        f'stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
+        f'<circle cx="{xs[-1]:.1f}" cy="{ys[-1]:.1f}" r="3.2" fill="{col}"/></svg>'
+    )
+
+
+def account_hero(name: str, paper, equity_str: str, balance_str: str,
+                 floating_val: float, floating_str: str, spark_html: str,
+                 pct_val: float, pct_str: str) -> None:
+    if paper is None:                       # aggregate "All accounts" view
+        cls, tag, dot = "", "COMBINED", "#10b981"
+    else:
+        cls = "paper" if paper else "live"
+        tag = "PAPER" if paper else "LIVE"
+        dot = "#f59e0b" if paper else "#f4525f"
+    fl = "pos" if floating_val > 0 else "neg" if floating_val < 0 else "neu"
+    pc = "pos" if pct_val > 0 else "neg" if pct_val < 0 else "neu"
+    st.markdown(
+        f'<div class="hero {cls}"><div>'
+        f'<div class="hero-top">'
+        f'<span style="width:9px;height:9px;border-radius:50%;background:{dot};display:inline-block"></span>'
+        f'<span class="hero-name">{name}</span>'
+        f'<span class="acct-tag {cls or "all"}">{tag}</span></div>'
+        f'<div class="hero-eqlabel">Account Equity</div>'
+        f'<div class="hero-eq">{equity_str}</div>'
+        f'<div class="hero-foot">'
+        f'<div class="hero-stat"><div class="k">Balance</div><div class="v">{balance_str}</div></div>'
+        f'<div class="hero-stat"><div class="k">Floating</div><div class="v {fl}">{floating_str}</div></div>'
+        f'</div></div>'
+        f'<div class="hero-chart"><div class="hero-charttop">'
+        f'<span class="lbl">Equity · Today</span>'
+        f'<span class="kpi-sub {pc}" style="margin:0">{pct_str}</span></div>{spark_html}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _rr_cell(pos) -> str:
+    sl, tp, cur = pos.stop_loss, pos.take_profit, pos.current_price
+    if sl is None or tp is None:
+        return '<div class="rr-none">No SL / TP set</div>'
+    frac = (cur - sl) / (tp - sl) if (tp - sl) else 0.0
+    frac = max(0.0, min(1.0, frac)) * 100.0
+    rr = pos.risk_reward
+    ratio = f"{rr:.2f}" if rr is not None else "—"
+    sla = pos.sl_amount or 0.0
+    tpa = pos.tp_amount or 0.0
+    return (
+        f'<div class="rr">'
+        f'<div class="rr-topline">'
+        f'<span class="rr-ratio">{ratio}<span>R:R</span></span>'
+        f'<span class="rr-amts"><span class="neg">{_money_signed(sla)}</span>'
+        f'<span class="dim"> / </span><span class="pos">{_money_signed(tpa)}</span></span></div>'
+        f'<div class="rr-track"><div class="rr-mark" style="left:{frac:.1f}%"></div></div>'
+        f'<div class="rr-scale"><span>{_price(sl)}</span>'
+        f'<span class="now">now {_price(cur)}</span><span>{_price(tp)}</span></div>'
+        f'</div>'
+    )
+
+
+def render_positions_table(rows, paper_map: dict) -> None:
+    head = (
+        '<div class="ptbl"><div class="ptbl-head">'
+        '<span>Ticker</span><span>Side</span><span class="r">Qty</span>'
+        '<span class="r">Entry</span><span class="r">Current</span><span class="r">Worth</span>'
+        '<span>Risk / Reward</span><span class="r">Float PnL</span><span class="r">PnL %</span>'
+        '</div>'
+    )
+    body = ""
+    for r in rows:
+        is_paper = paper_map.get(r.account, True)
+        sub = f'{r.account} · {"paper" if is_paper else "live"}'
+        if r.side == "long":
+            badge = f'<span class="p-badge long">{icon("north")}LONG</span>'
+        else:
+            badge = f'<span class="p-badge short">{icon("south")}SHORT</span>'
+        plc = signed_class(r.unrealized_pl)
+        ppc = signed_class(r.unrealized_plpc)
+        body += (
+            '<div class="ptbl-row">'
+            f'<div><div class="p-sym">{r.symbol}</div><div class="p-sub">{sub}</div></div>'
+            f'<div>{badge}</div>'
+            f'<div class="r">{abs(r.qty):,.2f}</div>'
+            f'<div class="r">{_price(r.avg_entry)}</div>'
+            f'<div class="r">{_price(r.current_price)}</div>'
+            f'<div class="r">{_money(r.market_value)}</div>'
+            f'<div>{_rr_cell(r)}</div>'
+            f'<div class="r {plc}" style="font-weight:700">{_money(r.unrealized_pl)}</div>'
+            f'<div class="r {ppc}">{r.unrealized_plpc:+.2f}%</div>'
+            '</div>'
+        )
+    st.markdown(head + body + "</div>", unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
