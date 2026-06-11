@@ -6,7 +6,8 @@
 <title>ALDash — Trading Dashboard</title>
 <meta name="theme-color" content="#090C12">
 <link rel="manifest" href="/manifest.json">
-<link rel="icon" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -173,7 +174,10 @@
   .rr-bar .risk{background:linear-gradient(90deg,rgba(255,100,124,.35),var(--loss))}
   .rr-bar .reward{background:linear-gradient(90deg,var(--gain),rgba(53,224,161,.35))}
   .rr-now{position:absolute;top:-3px;width:2px;height:13px;background:#fff;border-radius:2px;box-shadow:0 0 6px rgba(255,255,255,.7)}
-  .rr-scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;color:var(--faint)}
+  .rr-scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;font-weight:500;color:var(--muted)}
+  .rr-scale .sl{color:#FF8FA0}
+  .rr-scale .tp{color:#5FE2BE}
+  .rr-scale .now{color:var(--text);font-weight:600}
   .rr-none{color:var(--faint);font-size:11.5px}
 
   .close-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
@@ -512,7 +516,7 @@ function positionRow(p){
       <div class="rr-top"><span class="rr-ratio">${p.rr!=null?p.rr.toFixed(2):'—'}<small> R:R</small></span>
         <span class="num" style="font-size:11px"><span class="loss">${signed(p.sl_pnl)}</span> / <span class="gain">${signed(p.tp_pnl)}</span></span></div>
       <div class="rr-bar"><div class="risk" style="width:${rw}%"></div><div class="reward" style="width:${vw}%"></div><div class="rr-now" style="left:${now}%"></div></div>
-      <div class="rr-scale"><span>${money(p.sl)}</span><span>now ${money(p.current)}</span><span>${money(p.tp)}</span></div></div>`;
+      <div class="rr-scale"><span class="sl">${money(p.sl)}</span><span class="now">now ${money(p.current)}</span><span class="tp">${money(p.tp)}</span></div></div>`;
   }
   const arrow = p.side==="long"?`<svg viewBox="0 0 24 24"><path d="M5 12l7-7 7 7M12 5v14"/></svg>`:`<svg viewBox="0 0 24 24"><path d="M19 12l-7 7-7-7M12 19V5"/></svg>`;
   return `<tr>

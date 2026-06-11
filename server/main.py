@@ -409,4 +409,9 @@ def index():
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse(STATIC_DIR / "favicon-32.png")
+
+
 app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
