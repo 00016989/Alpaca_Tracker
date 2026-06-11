@@ -23,7 +23,7 @@ from fastapi.staticfiles import StaticFiles
 
 from aldash import store
 from aldash.client import AccountClient
-from aldash.config import AccountConfig, load_accounts
+from aldash.config import AccountConfig, load_accounts, read_secrets
 from aldash.positions import consolidate
 from aldash.tradelog import fetch_filled_orders, fifo_round_trips, summarize
 
@@ -37,12 +37,7 @@ app = FastAPI(title="ALDash")
 # Auth (stateless signed cookie; no-op when no password is configured)
 # ──────────────────────────────────────────────────────────────────────────
 def _expected_password() -> Optional[str]:
-    try:
-        import streamlit as st  # reuse the same secret source as the old app
-        pw = st.secrets.get("app_password", None)
-    except Exception:
-        pw = None
-    return pw or os.getenv("ALDASH_PASSWORD")
+    return read_secrets().get("app_password") or os.getenv("ALDASH_PASSWORD")
 
 
 def _token(pw: str) -> str:

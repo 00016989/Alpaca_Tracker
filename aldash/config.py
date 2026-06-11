@@ -1,7 +1,8 @@
 """Account configuration loading.
 
-Credentials are read from Streamlit secrets (.streamlit/secrets.toml) first, and
-fall back to environment variables so the app can also run in CI / containers.
+Credentials are read from .streamlit/secrets.toml first (kept for backward
+compatibility), and fall back to environment variables (ALDASH_ACCOUNT_*) so
+the app can run in CI / containers / on hosts like Render.
 
 secrets.toml format:
 
@@ -14,7 +15,9 @@ secrets.toml format:
 from __future__ import annotations
 
 import os
+import tomllib
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List
 
 # Load a local .env file (if present) so credentials can live there.
@@ -24,6 +27,16 @@ try:
     load_dotenv()
 except ImportError:
     pass
+
+_SECRETS_PATH = Path(__file__).resolve().parent.parent / ".streamlit" / "secrets.toml"
+
+
+def read_secrets() -> dict:
+    """Parse .streamlit/secrets.toml directly (no Streamlit dependency)."""
+    try:
+        return tomllib.loads(_SECRETS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
 
 
 @dataclass(frozen=True)
@@ -39,18 +52,8 @@ class AccountConfig:
         return "PAPER" if self.paper else "LIVE"
 
 
-def _from_streamlit() -> List[AccountConfig]:
-    try:
-        import streamlit as st
-    except ImportError:
-        return []
-
-    try:
-        raw = st.secrets.get("accounts", None)
-    except Exception:
-        # st.secrets raises if no secrets file exists at all
-        return []
-
+def _from_secrets() -> List[AccountConfig]:
+    raw = read_secrets().get("accounts", None)
     if not raw:
         return []
 
@@ -107,7 +110,7 @@ def load_accounts() -> List[AccountConfig]:
     the config-based account wins.
     """
     config: List[AccountConfig] = []
-    for source in (_from_streamlit, _from_env):
+    for source in (_from_secrets, _from_env):
         configured = [a for a in source() if _is_configured(a)]
         if configured:
             config = configured
