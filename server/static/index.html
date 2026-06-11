@@ -98,6 +98,9 @@
   .pill .d{width:6px;height:6px;border-radius:50%;background:currentColor}
   .pill.live .d{animation:pulse 1.8s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .acct,.tab,.kpi,.pstat{transition:border-color .15s,background .15s,color .15s,box-shadow .15s}
+  .acct .nm,.acct .tag,.acct .dot{transition:color .15s}
   .live-flag{font-size:11px;color:var(--faint);margin-top:4px;display:flex;align-items:center;gap:6px;justify-content:flex-end}
   .live-flag .d{width:6px;height:6px;border-radius:50%;background:var(--gain);animation:pulse 1.8s infinite}
 
@@ -382,15 +385,13 @@ function attachSpark(){
 }
 
 /* ---------- render dashboard ---------- */
-function render(d){
-  STATE.accounts=d.accounts; STATE.positions=d.positions;
-  // sidebar accounts
+let _sidebarKey="";
+function buildSidebar(accounts,total){
   const ac=el("accounts");
-  let html=`<div class="acct all ${d.scope==='all'?'active':''}" data-scope="all">All accounts · ${d.counts.total}</div>`;
-  d.accounts.forEach(a=>{
-    const active=d.scope===a.name?'active':'';
+  let html=`<div class="acct all" data-scope="all">All accounts · ${total}</div>`;
+  accounts.forEach(a=>{
     html+=`<div class="acct-row">
-      <div class="acct ${active}" style="flex:1" data-scope="${a.name}">
+      <div class="acct" style="flex:1" data-scope="${a.name}">
         <span class="dot ${a.paper?'paper':'live'}"></span><span class="nm">${a.name}</span><span class="tag">${a.paper?'PAPER':'LIVE'}</span>
       </div>
       <button class="icon-btn" data-del="${a.name}" title="Delete ${a.name}"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
@@ -401,9 +402,20 @@ function render(d){
   ac.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",async e=>{
     e.stopPropagation();
     if(!confirm("Delete account \""+b.dataset.del+"\"?")) return;
-    try{ await api("/api/accounts/"+encodeURIComponent(b.dataset.del),{method:"DELETE"}); if(STATE.scope===b.dataset.del)STATE.scope="all"; toast("Account removed"); refresh(); }
+    try{ await api("/api/accounts/"+encodeURIComponent(b.dataset.del),{method:"DELETE"}); if(STATE.scope===b.dataset.del)STATE.scope="all"; _sidebarKey=""; toast("Account removed"); refresh(); }
     catch(err){ toast(err.message,false); }
   }));
+  setActiveScope(STATE.scope);
+}
+function setActiveScope(scope){
+  document.querySelectorAll("#accounts [data-scope]").forEach(n=>n.classList.toggle("active", n.dataset.scope===scope));
+}
+function render(d){
+  STATE.accounts=d.accounts; STATE.positions=d.positions;
+  // rebuild the sidebar only when the account set changes (not every refresh) → no flicker
+  const skey=d.accounts.map(a=>a.name+(a.paper?'P':'L')).join("|")+"#"+d.counts.total;
+  if(skey!==_sidebarKey){ buildSidebar(d.accounts,d.counts.total); _sidebarKey=skey; }
+  setActiveScope(d.scope);
 
   // topbar
   el("tbCount").innerHTML=`<span>${d.counts.total} account(s)</span>
@@ -518,6 +530,7 @@ async function renderOrders(){
   el("tabContent").innerHTML=`<div class="empty">Loading orders…</div>`;
   try{
     const d=await api("/api/orders?scope="+encodeURIComponent(STATE.scope));
+    if(STATE.tab!=="orders") return;
     if(!d.orders.length){ el("tabContent").innerHTML=`<div class="empty">No open orders${STATE.scope==='all'?'':' for '+STATE.scope}.</div>`; return; }
     let rows="";
     d.orders.forEach(o=>{ if(o.error){ rows+=`<tr><td class="td-l">${o.account}</td><td colspan="7" class="loss td-l">${o.error}</td><td></td></tr>`; return;}
@@ -542,6 +555,7 @@ async function renderTradelog(){
   el("tabContent").innerHTML=`<div class="empty">Loading trade log…</div>`;
   try{
     const d=await api("/api/tradelog?scope="+encodeURIComponent(STATE.scope)+"&days=90");
+    if(STATE.tab!=="tradelog") return;
     const s=d.summary;
     const stats=`<div class="pstats">
       ${pstat('Realized PnL','<span class="'+cls(s.pnl)+'">'+signed(s.pnl)+'</span>',s.n+' trades',cls(s.pnl))}
@@ -594,6 +608,7 @@ async function renderNews(){
   try{
     const syms=[...new Set(STATE.positions.map(p=>p.symbol))].slice(0,10).join(",");
     const d=await api("/api/news?symbols="+encodeURIComponent(syms));
+    if(STATE.tab!=="news") return;
     if(!d.news.length){ el("tabContent").innerHTML=`<div class="empty">No recent news.</div>`; return; }
     el("tabContent").innerHTML=d.news.map(n=>`<div class="news-card">
       <div class="h">${n.url?`<a href="${n.url}" target="_blank">${n.headline}</a>`:n.headline}</div>
@@ -604,20 +619,23 @@ async function renderNews(){
 }
 
 /* ---------- tabs ---------- */
+function fadeTab(){ const c=el("tabContent"); c.style.animation="none"; void c.offsetWidth; c.style.animation="fadeIn .2s ease"; }
 el("tabs").querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  if(t.classList.contains("active")) return;            // already here — no-op
   el("tabs").querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-  t.classList.add("active"); STATE.tab=t.dataset.tab;
-  if(STATE.tab==="orders") renderOrders();
-  else if(STATE.tab==="tradelog") renderTradelog();
-  else if(STATE.tab==="trade") renderTrade();
-  else if(STATE.tab==="news") renderNews();
-  else refresh();
+  t.classList.add("active"); STATE.tab=t.dataset.tab; fadeTab();
+  if(STATE.tab==="positions") refresh(); else reloadTab();
 }));
 
 /* ---------- refresh loop ---------- */
+let _seq=0;
 async function refresh(){
-  try{ const d=await api("/api/dashboard?scope="+encodeURIComponent(STATE.scope)); STATE.scope=d.scope; render(d); }
-  catch(err){ if(err.message!=="auth") console.error(err); }
+  const my=++_seq;                       // only the latest request is allowed to render
+  try{
+    const d=await api("/api/dashboard?scope="+encodeURIComponent(STATE.scope));
+    if(my!==_seq) return;                // a newer switch superseded this one — drop it
+    STATE.scope=d.scope; render(d);
+  }catch(err){ if(err.message!=="auth") console.error(err); }
 }
 function reloadTab(){
   if(STATE.tab==="orders") renderOrders();
@@ -625,8 +643,10 @@ function reloadTab(){
   else if(STATE.tab==="news") renderNews();
   else if(STATE.tab==="trade") renderTrade();
 }
-async function onScope(scope){          // account picked in sidebar
-  STATE.scope=scope; await refresh();   // updates header / KPIs / hero (+positions)
+async function onScope(scope){           // account picked in sidebar
+  if(scope===STATE.scope) return;        // already selected — no-op
+  STATE.scope=scope; setActiveScope(scope);   // instant highlight, before the fetch
+  await refresh();
   if(STATE.tab!=="positions") reloadTab();
 }
 function reschedule(){
