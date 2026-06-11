@@ -114,25 +114,36 @@ section[data-testid="stSidebar"] .stButton > button {
 section[data-testid="stSidebar"] .stButton > button:hover {
   border-color:var(--accent); color:var(--accent); background:var(--accent-weak);
 }
-section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+section[data-testid="stSidebar"] .stButton > button[kind*="primary"],
+section[data-testid="stSidebar"] .stFormSubmitButton > button[kind*="primary"] {
   background: var(--accent); border-color:var(--accent);
-  color:#fff; box-shadow:0 2px 8px rgba(5,150,105,.25);
+  color:#fff !important; box-shadow:0 2px 8px rgba(5,150,105,.25);
 }
-section[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
-  background: var(--accent-strong); border-color:var(--accent-strong); color:#fff;
+section[data-testid="stSidebar"] .stButton > button[kind*="primary"]:hover,
+section[data-testid="stSidebar"] .stFormSubmitButton > button[kind*="primary"]:hover {
+  background: var(--accent-strong); border-color:var(--accent-strong); color:#fff !important;
 }
+section[data-testid="stSidebar"] .stButton > button[kind*="primary"] p,
+section[data-testid="stSidebar"] .stFormSubmitButton > button[kind*="primary"] p { color:#fff !important; }
 
 /* ---------- tables ---------- */
 [data-testid="stDataFrame"] { border:1px solid var(--border); border-radius:12px; overflow:hidden; }
 
 /* ---------- buttons ---------- */
-.stButton > button, .stDownloadButton > button {
+.stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
   border-radius:10px; font-weight:600; border:1px solid var(--border-strong);
   background:var(--surface); color:var(--text); transition:.12s;
 }
-.stButton > button:hover, .stDownloadButton > button:hover { border-color:var(--accent); color:var(--accent); }
-.stButton > button[kind="primary"] { background:var(--accent); border-color:var(--accent); color:#fff; }
-.stButton > button[kind="primary"]:hover { background:var(--accent-strong); border-color:var(--accent-strong); color:#fff; }
+.stButton > button:hover, .stDownloadButton > button:hover, .stFormSubmitButton > button:hover {
+  border-color:var(--accent); color:var(--accent); background:var(--accent-weak);
+}
+.stButton > button[kind*="primary"], .stFormSubmitButton > button[kind*="primary"] {
+  background:var(--accent); border-color:var(--accent); color:#fff !important;
+}
+.stButton > button[kind*="primary"]:hover, .stFormSubmitButton > button[kind*="primary"]:hover {
+  background:var(--accent-strong); border-color:var(--accent-strong); color:#fff !important;
+}
+.stButton > button[kind*="primary"] p, .stFormSubmitButton > button[kind*="primary"] p { color:#fff !important; }
 
 /* ---------- news cards ---------- */
 .news-card {
@@ -150,6 +161,51 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
 /* section labels */
 .sec-label { color:var(--text-2); font-size:11.5px; font-weight:700; text-transform:uppercase;
   letter-spacing:.8px; margin:14px 0 11px 0; }
+
+/* ---------- forms ---------- */
+[data-testid="stForm"] {
+  background:var(--surface); border:1px solid var(--border); border-radius:16px;
+  padding:20px 22px; box-shadow:var(--shadow-sm);
+}
+
+/* ---------- inputs ---------- */
+.stTextInput input, .stNumberInput input, .stTextArea textarea {
+  border-radius:10px !important; border:1px solid var(--border-strong) !important;
+  background:var(--surface) !important; color:var(--text) !important; font-size:14px;
+}
+.stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
+  border-color:var(--accent) !important; box-shadow:0 0 0 3px rgba(5,150,105,.12) !important;
+}
+div[data-baseweb="select"] > div {
+  border-radius:10px !important; border-color:var(--border-strong) !important; background:var(--surface) !important;
+}
+div[data-baseweb="select"] > div:focus-within {
+  border-color:var(--accent) !important; box-shadow:0 0 0 3px rgba(5,150,105,.12) !important;
+}
+.stMultiSelect div[data-baseweb="tag"] { background:var(--accent-weak) !important; }
+.stMultiSelect div[data-baseweb="tag"] span { color:var(--accent) !important; }
+/* labels above inputs */
+.stTextInput label, .stNumberInput label, .stSelectbox label, .stMultiSelect label,
+.stSlider label, .stTextArea label, .stRadio label, .stCheckbox label {
+  color:var(--text-2) !important; font-size:12.5px !important; font-weight:600 !important;
+}
+/* toggle / slider accent */
+.stSlider [data-baseweb="slider"] div[role="slider"] { background:var(--accent) !important; }
+.stCheckbox [data-baseweb="checkbox"] [data-checked="true"],
+[data-testid="stToggle"] [aria-checked="true"] { background:var(--accent) !important; }
+
+/* expander */
+[data-testid="stExpander"] {
+  border:1px solid var(--border) !important; border-radius:12px !important;
+  background:var(--surface) !important; box-shadow:var(--shadow-sm);
+}
+[data-testid="stExpander"] summary:hover { color:var(--accent) !important; }
+
+/* alerts a touch softer */
+[data-testid="stAlert"] { border-radius:11px; }
+
+/* dividers */
+hr { border-color:var(--border) !important; }
 
 /* ---------- custom data table ---------- */
 .tbl-wrap { border:1px solid var(--border); border-radius:14px; overflow:auto; margin:6px 0 12px 0;

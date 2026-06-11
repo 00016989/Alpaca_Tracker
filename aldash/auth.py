@@ -39,18 +39,18 @@ def require_login() -> None:
 
     # ---- render centered login ----
     st.markdown(
-        '<div style="max-width:380px;margin:8vh auto 0 auto;">'
-        '<div style="font-size:26px;font-weight:800;color:#f1f5f9;">🔒 AL'
-        '<span style="color:#3b82f6;">Dash</span></div>'
-        '<div style="color:#8b97a7;font-size:13px;margin:6px 0 18px 0;">'
-        'Enter your password to access the dashboard.</div></div>',
+        '<div style="max-width:400px;margin:11vh auto 0 auto;text-align:center;">'
+        '<div style="font-size:30px;font-weight:800;color:#0f1722;letter-spacing:-.6px;">'
+        '📈 AL<span style="color:#059669;">Dash</span></div>'
+        '<div style="color:#5a6675;font-size:13.5px;margin:8px 0 22px 0;">'
+        'Enter your password to access your trading dashboard.</div></div>',
         unsafe_allow_html=True,
     )
     _, mid, _ = st.columns([1, 2, 1])
     with mid:
         with st.form("login_form"):
             pw = st.text_input("Password", type="password", label_visibility="collapsed",
-                               placeholder="Password")
+                               placeholder="🔒  Password")
             submitted = st.form_submit_button("Sign in", width="stretch", type="primary")
         if submitted:
             if hmac.compare_digest(str(pw), str(expected)):
