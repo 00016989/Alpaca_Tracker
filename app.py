@@ -67,6 +67,18 @@ def cached_fills(name: str, key: str, secret: str, paper: bool, days: int):
     return fetch_filled_orders(client, days=days)
 
 
+# Window used for the per-account Balance's realized-PnL component.
+BALANCE_REALIZED_DAYS = 365
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def cached_realized_pnl(name: str, key: str, secret: str, paper: bool,
+                        days: int = BALANCE_REALIZED_DAYS) -> float:
+    """Total realized PnL (FIFO round-trips) for one account over `days`."""
+    fills = cached_fills(name, key, secret, paper, days)
+    return sum(t.pnl for t in fifo_round_trips(fills))
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Sidebar
 # ──────────────────────────────────────────────────────────────────────────
@@ -211,6 +223,7 @@ def render():
             per_account_metrics.append((d["cfg"], None, None, None, None))
             continue
         acct = d["account"]
+        cfg = d["cfg"]
         equity = float(getattr(acct, "equity", 0) or 0)
         last_equity = float(getattr(acct, "last_equity", 0) or 0)
         cash = float(getattr(acct, "cash", 0) or 0)
@@ -218,12 +231,20 @@ def render():
         float_pl = sum(r.unrealized_pl for r in rows)
         day_pl = equity - last_equity
 
+        # Balance = total exposure (Σ market value) + cash + realized PnL.
+        exposure = sum(r.market_value for r in rows)
+        try:
+            realized = cached_realized_pnl(cfg.name, cfg.api_key, cfg.api_secret, cfg.paper)
+        except Exception:
+            realized = 0.0
+        balance = exposure + cash + realized
+
         total_equity += equity
         total_cash += cash
         total_float_pl += float_pl
         total_day_pl += day_pl
         n_positions += len(rows)
-        per_account_metrics.append((d["cfg"], equity, float_pl, day_pl, cash))
+        per_account_metrics.append((cfg, equity, float_pl, balance, cash))
 
     day_pct = (total_day_pl / (total_equity - total_day_pl) * 100.0) if (total_equity - total_day_pl) else 0.0
     float_pct = (total_float_pl / (total_equity - total_float_pl) * 100.0) if (total_equity - total_float_pl) else 0.0
@@ -239,11 +260,10 @@ def render():
     # per-account strip
     ui.label("Accounts")
     cards = []
-    for cfg, equity, float_pl, day_pl, cash in per_account_metrics:
+    for cfg, equity, float_pl, balance, cash in per_account_metrics:
         if equity is None:
             cards.append(ui.account_card(cfg.name, "—", "—", 0, "error", cfg.paper))
         else:
-            balance = equity - float_pl
             cards.append(ui.account_card(cfg.name, fmt.money(equity), fmt.money(balance),
                                          float_pl, fmt.money(float_pl), cfg.paper))
     ui.account_row(cards)
