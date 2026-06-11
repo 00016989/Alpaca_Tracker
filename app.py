@@ -232,10 +232,10 @@ def render():
     cards = []
     for cfg, equity, float_pl, day_pl, cash in per_account_metrics:
         if equity is None:
-            cards.append(ui.account_card(cfg.name, "—", 0, "error", cfg.paper))
+            cards.append(ui.account_card(cfg.name, "—", "—", 0, "error", cfg.paper))
         else:
-            cards.append(ui.account_card(cfg.name, fmt.money(equity), float_pl,
-                                         fmt.money(float_pl), cfg.paper))
+            cards.append(ui.account_card(cfg.name, fmt.money(equity), fmt.money(cash),
+                                         float_pl, fmt.money(float_pl), cfg.paper))
     ui.account_row(cards)
 
     for d in account_data:

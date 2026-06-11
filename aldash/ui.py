@@ -65,7 +65,12 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 .acct-tag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; }
 .acct-tag.live { background:rgba(234,57,67,.15); color:#ff6b76; }
 .acct-tag.paper{ background:rgba(234,179,8,.15); color:#facc15; }
-.acct-eq { font-size:19px; font-weight:800; color:#f1f5f9; margin-top:6px; }
+.acct-eq { font-size:19px; font-weight:800; color:#f1f5f9; margin-top:8px; line-height:1.1; }
+.acct-eq-label { color:#8b97a7; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; margin-top:2px; }
+.acct-foot { display:flex; gap:10px; margin-top:11px; padding-top:10px; border-top:1px solid #1a2330; }
+.acct-stat { flex:1; min-width:0; }
+.acct-stat .k { color:#8b97a7; font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+.acct-stat .v { font-size:13px; font-weight:700; color:#dbe2ea; margin-top:3px; }
 
 .pos { color:#16c784; }
 .neg { color:#ea3943; }
@@ -180,15 +185,22 @@ def kpi_row(cards: Iterable[str]) -> None:
     st.markdown(f'<div class="kpi-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
 
 
-def account_card(name: str, equity: str, float_pl: float, float_pl_text: str, paper: bool) -> str:
+def account_card(name: str, equity: str, cash: str, float_pl: float,
+                 float_pl_text: str, paper: bool) -> str:
     cls = "paper" if paper else "live"
     tag = "PAPER" if paper else "LIVE"
-    sub = _sub(float_pl, f"{float_pl_text} floating")
+    fl_cls = "pos" if float_pl > 0 else "neg" if float_pl < 0 else "neu"
     return (
         f'<div class="acct-card {cls}"><div class="acct-top">'
         f'<span class="acct-name">{name}</span>'
         f'<span class="acct-tag {cls}">{tag}</span></div>'
-        f'<div class="acct-eq">{equity}</div>{sub}</div>'
+        f'<div class="acct-eq">{equity}</div>'
+        f'<div class="acct-eq-label">Equity</div>'
+        f'<div class="acct-foot">'
+        f'<div class="acct-stat"><div class="k">Balance</div><div class="v">{cash}</div></div>'
+        f'<div class="acct-stat"><div class="k">Floating</div>'
+        f'<div class="v {fl_cls}">{float_pl_text}</div></div>'
+        f'</div></div>'
     )
 
 
