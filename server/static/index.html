@@ -127,7 +127,11 @@
   .spark-head{display:flex;align-items:baseline;justify-content:space-between}
   .spark-head .t{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:600}
   .spark-head .pct{font-family:var(--mono);font-size:13px;font-weight:600}
-  .spark{width:100%;height:96px}
+  .spark{width:100%;height:96px;display:block}
+  .spark-wrap{position:relative;cursor:crosshair}
+  .spark-guide{position:absolute;top:0;bottom:0;width:1px;background:rgba(234,237,243,.28);display:none;pointer-events:none;transform:translateX(-.5px)}
+  .spark-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--brand);border:2px solid var(--panel);display:none;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(53,224,161,.7)}
+  .spark-tip{position:absolute;transform:translate(-50%,calc(-100% - 10px));background:var(--panel-2);border:1px solid var(--line-strong);border-radius:8px;padding:5px 10px;font-family:var(--mono);font-size:12px;font-weight:600;white-space:nowrap;display:none;pointer-events:none;box-shadow:0 8px 18px rgba(0,0,0,.55);z-index:5}
 
   .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
   .tab{display:flex;align-items:center;gap:8px;padding:11px 16px;cursor:pointer;color:var(--muted);font-size:13.5px;font-weight:500;font-family:var(--body);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s;white-space:nowrap}
@@ -342,19 +346,39 @@ el("logout").addEventListener("click", async ()=>{ await fetch("/api/logout",{me
 /* ---------- sparkline ---------- */
 function sparkSVG(series){
   const pts=(series||[]).map(Number).filter(v=>!isNaN(v));
+  STATE.spark={vals:pts,lo:0,hi:0};
   if(pts.length<2) return `<div class="rr-none" style="text-align:center;padding:34px 0">No intraday equity yet.</div>`;
   const W=340,H=96,pad=6, lo=Math.min(...pts), hi=Math.max(...pts), rng=(hi-lo)||1;
+  STATE.spark={vals:pts,lo,hi};
   const xs=i=>pad+i*(W-2*pad)/(pts.length-1), ys=v=>H-pad-((v-lo)/rng)*(H-2*pad);
   let d="M"+xs(0).toFixed(1)+" "+ys(pts[0]).toFixed(1);
   pts.forEach((v,i)=>{ if(i>0) d+=" L"+xs(i).toFixed(1)+" "+ys(v).toFixed(1); });
   const area=d+` L${xs(pts.length-1).toFixed(1)} ${H-pad} L${xs(0).toFixed(1)} ${H-pad} Z`;
   const col=pts[pts.length-1]>=pts[0]?"#35E0A1":"#FF647C";
-  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+  return `<div class="spark-wrap" id="sparkWrap"><svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
     <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="${col}" stop-opacity=".30"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
     <path d="${area}" fill="url(#sg)"/>
     <path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="${xs(pts.length-1).toFixed(1)}" cy="${ys(pts[pts.length-1]).toFixed(1)}" r="3.5" fill="${col}" stroke="#10141D" stroke-width="2"/></svg>`;
+    <circle cx="${xs(pts.length-1).toFixed(1)}" cy="${ys(pts[pts.length-1]).toFixed(1)}" r="3.5" fill="${col}" stroke="#10141D" stroke-width="2"/></svg>
+    <div class="spark-guide" id="sparkGuide"></div><div class="spark-dot" id="sparkDot"></div><div class="spark-tip" id="sparkTip"></div></div>`;
+}
+function attachSpark(){
+  const wrap=el("sparkWrap"); if(!wrap||!STATE.spark||STATE.spark.vals.length<2) return;
+  const tip=el("sparkTip"),guide=el("sparkGuide"),dot=el("sparkDot"),H=96,pad=6;
+  const move=(clientX)=>{
+    const r=wrap.getBoundingClientRect(),{vals,lo,hi}=STATE.spark,n=vals.length,rng=(hi-lo)||1;
+    let frac=(clientX-r.left)/r.width; frac=Math.max(0,Math.min(1,frac));
+    const i=Math.round(frac*(n-1)),v=vals[i],xp=i/(n-1)*100,yp=H-pad-((v-lo)/rng)*(H-2*pad);
+    guide.style.left=xp+"%"; guide.style.display="block";
+    dot.style.left=xp+"%"; dot.style.top=yp+"px"; dot.style.display="block";
+    tip.style.left=xp+"%"; tip.style.top=yp+"px"; tip.style.display="block"; tip.textContent=money(v);
+  };
+  const hide=()=>{guide.style.display=dot.style.display=tip.style.display="none";};
+  wrap.addEventListener("mousemove",e=>move(e.clientX));
+  wrap.addEventListener("mouseleave",hide);
+  wrap.addEventListener("touchmove",e=>{if(e.touches[0])move(e.touches[0].clientX);},{passive:true});
+  wrap.addEventListener("touchend",hide);
 }
 
 /* ---------- render dashboard ---------- */
@@ -373,7 +397,7 @@ function render(d){
     </div>`;
   });
   ac.innerHTML=html;
-  ac.querySelectorAll("[data-scope]").forEach(n=>n.addEventListener("click",()=>{STATE.scope=n.dataset.scope; refresh();}));
+  ac.querySelectorAll("[data-scope]").forEach(n=>n.addEventListener("click",()=>onScope(n.dataset.scope)));
   ac.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",async e=>{
     e.stopPropagation();
     if(!confirm("Delete account \""+b.dataset.del+"\"?")) return;
@@ -417,6 +441,7 @@ function render(d){
       <div class="spark-head"><span class="t">Equity · today</span><span class="pct ${cls(h.pct)}">${pct(h.pct)}</span></div>
       ${sparkSVG(h.series)}
     </div>`;
+  attachSpark();
 
   if(STATE.tab==="positions") renderPositions(d);
 }
@@ -492,8 +517,8 @@ function positionRow(p){
 async function renderOrders(){
   el("tabContent").innerHTML=`<div class="empty">Loading orders…</div>`;
   try{
-    const d=await api("/api/orders");
-    if(!d.orders.length){ el("tabContent").innerHTML=`<div class="empty">No open orders.</div>`; return; }
+    const d=await api("/api/orders?scope="+encodeURIComponent(STATE.scope));
+    if(!d.orders.length){ el("tabContent").innerHTML=`<div class="empty">No open orders${STATE.scope==='all'?'':' for '+STATE.scope}.</div>`; return; }
     let rows="";
     d.orders.forEach(o=>{ if(o.error){ rows+=`<tr><td class="td-l">${o.account}</td><td colspan="7" class="loss td-l">${o.error}</td><td></td></tr>`; return;}
       rows+=`<tr><td class="td-l"><span class="ticker">${o.symbol}</span><div class="cell-acct">${o.account}</div></td>
@@ -516,7 +541,7 @@ async function renderOrders(){
 async function renderTradelog(){
   el("tabContent").innerHTML=`<div class="empty">Loading trade log…</div>`;
   try{
-    const d=await api("/api/tradelog?days=90");
+    const d=await api("/api/tradelog?scope="+encodeURIComponent(STATE.scope)+"&days=90");
     const s=d.summary;
     const stats=`<div class="pstats">
       ${pstat('Realized PnL','<span class="'+cls(s.pnl)+'">'+signed(s.pnl)+'</span>',s.n+' trades',cls(s.pnl))}
@@ -593,6 +618,16 @@ el("tabs").querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
 async function refresh(){
   try{ const d=await api("/api/dashboard?scope="+encodeURIComponent(STATE.scope)); STATE.scope=d.scope; render(d); }
   catch(err){ if(err.message!=="auth") console.error(err); }
+}
+function reloadTab(){
+  if(STATE.tab==="orders") renderOrders();
+  else if(STATE.tab==="tradelog") renderTradelog();
+  else if(STATE.tab==="news") renderNews();
+  else if(STATE.tab==="trade") renderTrade();
+}
+async function onScope(scope){          // account picked in sidebar
+  STATE.scope=scope; await refresh();   // updates header / KPIs / hero (+positions)
+  if(STATE.tab!=="positions") reloadTab();
 }
 function reschedule(){
   if(timer) clearInterval(timer);

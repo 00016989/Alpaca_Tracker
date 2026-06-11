@@ -65,7 +65,12 @@ def _require(cookie: Optional[str]) -> None:
 # Client cache + per-account fetch (fault-isolated)
 # ──────────────────────────────────────────────────────────────────────────
 _clients: dict[tuple, AccountClient] = {}
-_series_cache: dict[str, tuple[float, list]] = {}  # name -> (ts, series)
+_series_cache: dict[str, tuple[float, list]] = {}    # name -> (ts, series)
+_payload_cache: dict[str, tuple[float, dict]] = {}   # name -> (ts, payload)
+_fills_cache: dict[tuple, tuple[float, list]] = {}   # (name, days) -> (ts, fills)
+
+PAYLOAD_TTL = 3.0     # short: keeps account-switch/tab snappy, still live within refresh
+FILLS_TTL = 120.0     # trade-log fills change rarely
 
 
 def _client(cfg: AccountConfig) -> AccountClient:
@@ -81,6 +86,20 @@ def _accounts() -> List[AccountConfig]:
 
 def _find(name: str) -> Optional[AccountConfig]:
     return next((a for a in _accounts() if a.name == name), None)
+
+
+def _scoped(scope: str) -> List[AccountConfig]:
+    if scope == "all":
+        return _accounts()
+    one = _find(scope)
+    return [one] if one else _accounts()
+
+
+def _invalidate(name: str) -> None:
+    """Drop caches for an account after a mutating action (close/trade/cancel)."""
+    _payload_cache.pop(name, None)
+    for k in [k for k in _fills_cache if k[0] == name]:
+        _fills_cache.pop(k, None)
 
 
 def _equity_series(cfg: AccountConfig) -> list:
@@ -112,6 +131,30 @@ def _account_payload(cfg: AccountConfig) -> dict:
     except Exception as exc:
         out["error"] = str(exc)
     return out
+
+
+def _payload(cfg: AccountConfig) -> dict:
+    """Account payload with a short TTL cache so rapid switches feel instant."""
+    hit = _payload_cache.get(cfg.name)
+    if hit and (time.time() - hit[0]) < PAYLOAD_TTL:
+        return hit[1]
+    p = _account_payload(cfg)
+    if not p["error"]:
+        _payload_cache[cfg.name] = (time.time(), p)
+    return p
+
+
+def _fills(cfg: AccountConfig, days: int) -> list:
+    key = (cfg.name, days)
+    hit = _fills_cache.get(key)
+    if hit and (time.time() - hit[0]) < FILLS_TTL:
+        return hit[1]
+    try:
+        f = fetch_filled_orders(_client(cfg), days=days)
+    except Exception:
+        f = []
+    _fills_cache[key] = (time.time(), f)
+    return f
 
 
 def _combine_series(serieses: list) -> list:
@@ -160,7 +203,7 @@ def dashboard(scope: str = "all", aldash_auth: Optional[str] = Cookie(None)):
         selected = [one] if one else accounts
         scope = scope if one else "all"
 
-    data = [_account_payload(cfg) for cfg in selected]
+    data = [_payload(cfg) for cfg in selected]
     ok = [d for d in data if not d["error"]]
 
     total_eq = sum(d["equity"] for d in ok)
@@ -232,16 +275,17 @@ def close(payload: dict = Body(...), aldash_auth: Optional[str] = Cookie(None)):
         raise HTTPException(status_code=404, detail="Account not found")
     try:
         _client(cfg).close_position(payload["symbol"])
+        _invalidate(cfg.name)
         return {"ok": True}
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
 
 @app.get("/api/orders")
-def orders(aldash_auth: Optional[str] = Cookie(None)):
+def orders(scope: str = "all", aldash_auth: Optional[str] = Cookie(None)):
     _require(aldash_auth)
     out = []
-    for cfg in _accounts():
+    for cfg in _scoped(scope):
         try:
             for o in _client(cfg).get_open_orders():
                 out.append({
@@ -268,20 +312,18 @@ def cancel(payload: dict = Body(...), aldash_auth: Optional[str] = Cookie(None))
         raise HTTPException(status_code=404, detail="Account not found")
     try:
         _client(cfg).cancel_order(payload["id"])
+        _invalidate(cfg.name)
         return {"ok": True}
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
 
 @app.get("/api/tradelog")
-def tradelog(days: int = 90, aldash_auth: Optional[str] = Cookie(None)):
+def tradelog(scope: str = "all", days: int = 90, aldash_auth: Optional[str] = Cookie(None)):
     _require(aldash_auth)
     fills = []
-    for cfg in _accounts():
-        try:
-            fills.extend(fetch_filled_orders(_client(cfg), days=days))
-        except Exception:
-            pass
+    for cfg in _scoped(scope):
+        fills.extend(_fills(cfg, days))
     fills.sort(key=lambda f: f.time)
     trips = fifo_round_trips(fills)
     s = summarize(trips)
@@ -330,6 +372,7 @@ def trade(payload: dict = Body(...), aldash_auth: Optional[str] = Cookie(None)):
             limit_price=payload.get("limit_price") or None,
             time_in_force=payload.get("tif", "day"),
         )
+        _invalidate(cfg.name)
         return {"ok": True, "id": str(getattr(order, "id", "?"))}
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
