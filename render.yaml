@@ -1,6 +1,6 @@
 # One-click deploy config for Render (https://render.com).
-# In the Render dashboard: New + → Blueprint → point at this repo.
-# Then add your secrets under the service's Environment tab (see DEPLOY_FASTAPI.md).
+# Render dashboard → New + → Blueprint → pick this repo → fill the secrets
+# marked "sync: false" (password + each account's API key/secret).
 services:
   - type: web
     name: aldash
@@ -9,13 +9,34 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn server.main:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
       - key: ALDASH_PASSWORD
         sync: false
+      # ---- Account 1 ----
       - key: ALDASH_ACCOUNT_1_NAME
-        sync: false
+        value: "Main (Live)"
+      - key: ALDASH_ACCOUNT_1_PAPER
+        value: "false"
       - key: ALDASH_ACCOUNT_1_KEY
         sync: false
       - key: ALDASH_ACCOUNT_1_SECRET
         sync: false
-      - key: ALDASH_ACCOUNT_1_PAPER
+      # ---- Account 2 ----
+      - key: ALDASH_ACCOUNT_2_NAME
+        value: "cv (Paper)"
+      - key: ALDASH_ACCOUNT_2_PAPER
+        value: "true"
+      - key: ALDASH_ACCOUNT_2_KEY
+        sync: false
+      - key: ALDASH_ACCOUNT_2_SECRET
+        sync: false
+      # ---- Account 3 ----
+      - key: ALDASH_ACCOUNT_3_NAME
+        value: "cnv (Paper)"
+      - key: ALDASH_ACCOUNT_3_PAPER
+        value: "true"
+      - key: ALDASH_ACCOUNT_3_KEY
+        sync: false
+      - key: ALDASH_ACCOUNT_3_SECRET
         sync: false
