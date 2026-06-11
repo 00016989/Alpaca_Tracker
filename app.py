@@ -100,7 +100,7 @@ if st.sidebar.button(f"★  All accounts  ·  {len(accounts)}", key="accbtn_all"
 for a in accounts:
     badge = "🟡 Paper" if a.paper else "🔴 Live"
     active = st.session_state["account_choice"] == a.name
-    col_sel, col_del = st.sidebar.columns([5, 1])
+    col_sel, col_del = st.sidebar.columns([5, 1], vertical_alignment="center")
     if col_sel.button(f"{a.name}  ·  {badge}", key=f"accbtn_{a.name}", width="stretch",
                       type="primary" if active else "secondary"):
         st.session_state["account_choice"] = a.name
@@ -178,8 +178,8 @@ def render():
     paper = sum(1 for a in selected if a.paper)
     ui.header(
         f"{len(selected)} account(s) · "
-        f"<span style='color:#ff6b76'>{live} live</span> · "
-        f"<span style='color:#facc15'>{paper} paper</span><br>"
+        f"<span style='color:#dc2626;font-weight:600'>{live} live</span> · "
+        f"<span style='color:#d97706;font-weight:600'>{paper} paper</span><br>"
         f"<span style='font-size:11px'>Live trading dashboard</span>"
     )
 
@@ -333,7 +333,7 @@ def render_positions(account_data: list[dict]):
 
     # Quick close
     ui.label("Close a position")
-    cc1, cc2 = st.columns([3, 1])
+    cc1, cc2 = st.columns([3, 1], vertical_alignment="bottom")
     label_to_row = {f"{r.account} · {r.symbol} ({fmt.money(r.market_value)})": r for r in all_rows}
     pick = cc1.selectbox("Position", list(label_to_row.keys()), label_visibility="collapsed")
     if cc2.button("Close position", type="secondary", width='stretch'):
@@ -381,7 +381,7 @@ def render_orders(account_data: list[dict]):
             )
         st.dataframe(pd.DataFrame.from_records(records), width='stretch', hide_index=True)
 
-        oc1, oc2 = st.columns([3, 1])
+        oc1, oc2 = st.columns([3, 1], vertical_alignment="bottom")
         ids = [r["ID"] for r in records]
         labels = {f"{r['Symbol']} {r['Side']} {r['Type']} · {r['ID'][:8]}": r["ID"] for r in records}
         pick = oc1.selectbox(
@@ -666,10 +666,10 @@ def render_accounts_admin():
     st.divider()
     ui.label("Your accounts")
     for a in accounts:
-        col1, col2 = st.columns([5, 1])
+        col1, col2 = st.columns([5, 1], vertical_alignment="center")
         badge = "🟡 Paper" if a.paper else "🔴 Live"
         src = "added here" if a.managed else "from .env / secrets"
-        col1.markdown(f"**{a.name}** · {badge}  \n<span style='color:#8b97a7;font-size:12px'>{src}</span>",
+        col1.markdown(f"**{a.name}** · {badge}  \n<span style='color:#8a94a3;font-size:12px'>{src}</span>",
                       unsafe_allow_html=True)
         if col2.button("🗑️ Delete", key=f"del_{a.name}", width="stretch"):
             store.remove(a)
@@ -685,8 +685,8 @@ def render_accounts_admin():
         ui.label("Hidden accounts")
         st.caption("These config accounts are hidden from the dashboard. Restore to show them again.")
         for name in hidden:
-            h1, h2 = st.columns([5, 1])
-            h1.markdown(f"**{name}**  \n<span style='color:#8b97a7;font-size:12px'>hidden</span>",
+            h1, h2 = st.columns([5, 1], vertical_alignment="center")
+            h1.markdown(f"**{name}**  \n<span style='color:#8a94a3;font-size:12px'>hidden</span>",
                         unsafe_allow_html=True)
             if h2.button("↩️ Restore", key=f"restore_{name}", width="stretch"):
                 store.unhide_account(name)
