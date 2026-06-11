@@ -65,7 +65,8 @@ def cached_fills(name: str, key: str, secret: str, paper: bool, days: int):
 # ──────────────────────────────────────────────────────────────────────────
 accounts = load_accounts()
 
-st.sidebar.title("📈 ALDash")
+st.sidebar.markdown(f'<div class="side-brand">{ui.wordmark(20, "side")}</div>',
+                    unsafe_allow_html=True)
 
 if not accounts:
     st.title("Welcome to ALDash")
@@ -106,7 +107,7 @@ for a in accounts:
                       type="primary" if active else "secondary"):
         st.session_state["account_choice"] = a.name
         st.rerun()
-    if col_del.button("🗑", key=f"trash_{a.name}", width="stretch",
+    if col_del.button(":material/delete:", key=f"trash_{a.name}", width="stretch",
                       help=f"Delete {a.name}"):
         st.session_state["pending_delete"] = a.name
         st.rerun()
@@ -154,7 +155,7 @@ with st.sidebar.expander("Add an account"):
                 store.add_account(new_name.strip(), new_key.strip(), new_secret.strip(), is_paper)
                 st.success(f"Added {new_name.strip()}")
                 st.rerun()
-    st.caption("Manage/delete accounts in the ⚙️ Accounts tab.")
+    st.caption("Delete an account with the 🗑 icon next to it above.")
 
 st.sidebar.divider()
 auto = st.sidebar.toggle("Auto-refresh", value=True, help="Live-update positions & PnL")
@@ -164,7 +165,7 @@ _fmt_int = lambda s: f"{s}s" if s < 60 else f"{s // 60}m"
 interval = st.sidebar.select_slider(
     "Refresh every", options=_INTERVALS, value=5, disabled=not auto, format_func=_fmt_int,
 )
-if st.sidebar.button("🔄 Refresh now", width="stretch"):
+if st.sidebar.button(":material/refresh: Refresh now", width="stretch"):
     st.rerun()
 
 st.sidebar.divider()
@@ -179,8 +180,8 @@ def render():
     paper = sum(1 for a in selected if a.paper)
     ui.header(
         f"{len(selected)} account(s) · "
-        f"<span style='color:#dc2626;font-weight:600'>{live} live</span> · "
-        f"<span style='color:#d97706;font-weight:600'>{paper} paper</span><br>"
+        f"<span style='color:#ff6b75;font-weight:600'>{live} live</span> · "
+        f"<span style='color:#fbbf24;font-weight:600'>{paper} paper</span><br>"
         f"<span style='font-size:11px'>Live trading dashboard</span>"
     )
 
@@ -246,9 +247,13 @@ def render():
 
     st.write("")
 
-    tab_pos, tab_orders, tab_log, tab_trade, tab_news, tab_acct = st.tabs(
-        ["📊 Positions", "🧾 Open Orders", "📒 Trade Log", "🛒 Trade", "📰 News", "⚙️ Accounts"]
-    )
+    tab_pos, tab_orders, tab_log, tab_trade, tab_news = st.tabs([
+        ":material/monitoring: Positions",
+        ":material/receipt_long: Open Orders",
+        ":material/history: Trade Log",
+        ":material/candlestick_chart: Trade",
+        ":material/newspaper: News",
+    ])
 
     with tab_pos:
         render_positions(account_data)
@@ -260,8 +265,6 @@ def render():
         render_trade()
     with tab_news:
         render_news(account_data)
-    with tab_acct:
-        render_accounts_admin()
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -358,8 +361,13 @@ def render_orders(account_data: list[dict]):
             continue
         orders = d["orders"]
         cfg = d["cfg"]
-        badge = "🟡" if cfg.paper else "🔴"
-        st.markdown(f"**{badge} {cfg.name}**")
+        dot = "#d97706" if cfg.paper else "#e0233a"
+        st.markdown(
+            f'<div style="font-weight:700;font-size:14px;margin-top:8px;">'
+            f'<span style="display:inline-block;width:9px;height:9px;border-radius:50%;'
+            f'background:{dot};margin-right:8px;vertical-align:middle;"></span>{cfg.name}</div>',
+            unsafe_allow_html=True,
+        )
         if not orders:
             st.caption("No open orders.")
             continue
@@ -496,8 +504,8 @@ def render_tradelog():
     ui.render_table(headers, hrows)
 
     csv = df.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Export CSV", csv, file_name=f"aldash_tradelog_{days}d.csv",
-                       mime="text/csv")
+    st.download_button(":material/download: Export CSV", csv,
+                       file_name=f"aldash_tradelog_{days}d.csv", mime="text/csv")
 
     with st.expander(f"Raw fills ({len(all_fills)})"):
         frecords = [
@@ -546,7 +554,7 @@ def render_trade():
         if not cfg.paper:
             confirm = st.checkbox("I understand this places a REAL order on a live account")
 
-        submitted = st.form_submit_button("🚀 Submit order", width='stretch')
+        submitted = st.form_submit_button("Submit order", type="primary", width='stretch')
 
     if submitted:
         if not symbol or qty <= 0:

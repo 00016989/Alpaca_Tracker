@@ -19,13 +19,13 @@ _CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root{
-  --bg:#f5f7f9; --surface:#ffffff; --surface-2:#f8fafc;
-  --border:#e6e9ef; --border-strong:#d4dae3;
-  --text:#0f1722; --text-2:#5a6675; --text-3:#8a94a3;
-  --accent:#059669; --accent-strong:#047857; --accent-weak:#ecfdf5;
-  --pos:#0a9d63; --neg:#e0233a; --amber:#d97706;
-  --shadow-sm:0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.05);
-  --shadow-md:0 4px 14px rgba(16,24,40,.07), 0 2px 4px rgba(16,24,40,.04);
+  --bg:#0e1117; --surface:#161b24; --surface-2:#1b212c;
+  --border:#232b38; --border-strong:#33404f;
+  --text:#e7ecf3; --text-2:#9aa6b6; --text-3:#6b7787;
+  --accent:#10b981; --accent-strong:#0d9b6c; --accent-weak:rgba(16,185,129,.13);
+  --pos:#16c784; --neg:#f4525f; --amber:#f59e0b;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.28), 0 1px 3px rgba(0,0,0,.22);
+  --shadow-md:0 6px 20px rgba(0,0,0,.38), 0 2px 6px rgba(0,0,0,.28);
 }
 
 html, body, [class*="css"], .stMarkdown, .stMetric { font-family: 'Inter', system-ui, sans-serif; }
@@ -42,13 +42,13 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 .app-header {
   display:flex; align-items:center; justify-content:space-between;
   padding: 18px 24px; border-radius: 18px; margin-bottom: 22px;
-  background: linear-gradient(135deg, #ffffff 0%, #f1faf5 100%);
+  background: linear-gradient(135deg, #18202b 0%, #142420 100%);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
 }
-.app-header .brand { font-size: 24px; font-weight: 800; color:var(--text); letter-spacing:-.4px; }
-.app-header .brand span { color:var(--accent); }
+.app-header .brand { display:flex; align-items:center; }
 .app-header .sub { color:var(--text-2); font-size:13px; text-align:right; line-height:1.6; }
+.side-brand { display:flex; align-items:center; gap:9px; margin:2px 0 10px 0; }
 
 /* ---------- KPI cards ---------- */
 .kpi-grid {
@@ -78,8 +78,8 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
 .acct-top { display:flex; justify-content:space-between; align-items:center; }
 .acct-name { font-weight:700; color:var(--text); font-size:13.5px; }
 .acct-tag { font-size:9.5px; font-weight:700; padding:3px 8px; border-radius:6px; letter-spacing:.5px; }
-.acct-tag.live { background:#fef2f2; color:#dc2626; }
-.acct-tag.paper{ background:#fffbeb; color:#d97706; }
+.acct-tag.live { background:rgba(244,82,95,.16); color:#ff6b75; }
+.acct-tag.paper{ background:rgba(245,158,11,.16); color:#fbbf24; }
 .acct-eq { font-size:21px; font-weight:800; color:var(--text); margin-top:9px; line-height:1.1; letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
 .acct-eq-label { color:var(--text-3); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; margin-top:2px; }
 .acct-foot { display:flex; gap:10px; margin-top:12px; padding-top:11px; border-top:1px solid var(--border); }
@@ -140,7 +140,7 @@ section[data-testid="stSidebar"] [class*="st-key-trash_"] button {
   color:var(--text-3); box-shadow:none; justify-content:center; font-size:15px;
 }
 section[data-testid="stSidebar"] [class*="st-key-trash_"] button:hover {
-  background:#fef2f2; color:var(--neg); border-color:#fecaca;
+  background:rgba(244,82,95,.15); color:var(--neg); border-color:rgba(244,82,95,.4);
 }
 section[data-testid="stSidebar"] [class*="st-key-trash_"] button p { color:inherit !important; }
 
@@ -192,13 +192,13 @@ section[data-testid="stSidebar"] [class*="st-key-trash_"] button p { color:inher
   background:var(--surface) !important; color:var(--text) !important; font-size:14px;
 }
 .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
-  border-color:var(--accent) !important; box-shadow:0 0 0 3px rgba(5,150,105,.12) !important;
+  border-color:var(--accent) !important; box-shadow:0 0 0 3px rgba(16,185,129,.2) !important;
 }
 div[data-baseweb="select"] > div {
   border-radius:10px !important; border-color:var(--border-strong) !important; background:var(--surface) !important;
 }
 div[data-baseweb="select"] > div:focus-within {
-  border-color:var(--accent) !important; box-shadow:0 0 0 3px rgba(5,150,105,.12) !important;
+  border-color:var(--accent) !important; box-shadow:0 0 0 3px rgba(16,185,129,.2) !important;
 }
 .stMultiSelect div[data-baseweb="tag"] { background:var(--accent-weak) !important; }
 .stMultiSelect div[data-baseweb="tag"] span { color:var(--accent) !important; }
@@ -222,6 +222,10 @@ div[data-baseweb="select"] > div:focus-within {
 /* alerts a touch softer */
 [data-testid="stAlert"] { border-radius:11px; }
 
+/* hide Streamlit's "Press Enter to submit" / input instruction tells */
+[data-testid="InputInstructions"], [data-testid="stTextInputInstructions"],
+div[class*="InputInstructions"] { display:none !important; }
+
 /* dividers */
 hr { border-color:var(--border) !important; }
 
@@ -242,7 +246,7 @@ table.dtbl tbody tr:hover { background:var(--surface-2); }
 table.dtbl tbody tr:last-child td { border-bottom:none; }
 .tk { font-weight:700; color:var(--text); }
 .badge-l { background:var(--accent-weak); color:var(--accent); padding:2px 9px; border-radius:6px; font-size:11px; font-weight:700; }
-.badge-s { background:#fef2f2; color:#dc2626; padding:2px 9px; border-radius:6px; font-size:11px; font-weight:700; }
+.badge-s { background:rgba(244,82,95,.16); color:#ff6b75; padding:2px 9px; border-radius:6px; font-size:11px; font-weight:700; }
 .sl-val { color:var(--neg); font-weight:600; }
 .tp-val { color:var(--pos); font-weight:600; }
 .dim { color:var(--text-3); }
@@ -254,10 +258,39 @@ def inject_css() -> None:
     st.markdown(_CSS, unsafe_allow_html=True)
 
 
+def logo_svg(size: int = 32, idn: str = "a") -> str:
+    """Inline SVG logo mark: emerald rounded tile with an upward trend line.
+
+    `idn` keeps the gradient id unique when several marks share one page.
+    """
+    return (
+        f'<svg width="{size}" height="{size}" viewBox="0 0 32 32" fill="none" '
+        f'xmlns="http://www.w3.org/2000/svg" style="flex:none;display:block">'
+        f'<rect width="32" height="32" rx="8.5" fill="url(#alg{idn})"/>'
+        f'<path d="M6.5 21.5 L12.5 14 L17 17.5 L25.5 8" stroke="#fff" stroke-width="2.4" '
+        f'stroke-linecap="round" stroke-linejoin="round"/>'
+        f'<circle cx="25.5" cy="8" r="2.3" fill="#fff"/>'
+        f'<defs><linearGradient id="alg{idn}" x1="3" y1="3" x2="29" y2="29" '
+        f'gradientUnits="userSpaceOnUse">'
+        f'<stop stop-color="#10b981"/><stop offset="1" stop-color="#047857"/>'
+        f'</linearGradient></defs></svg>'
+    )
+
+
+def wordmark(size_px: int = 24, idn: str = "h") -> str:
+    """Logo mark + 'ALDash' wordmark as a single inline-flex unit."""
+    return (
+        f'<span style="display:inline-flex;align-items:center;gap:10px;'
+        f'font-size:{size_px}px;font-weight:800;color:var(--text);letter-spacing:-.5px;">'
+        f'{logo_svg(round(size_px * 1.35), idn)}'
+        f'<span>AL<span style="color:var(--accent)">Dash</span></span></span>'
+    )
+
+
 def header(subtitle_html: str) -> None:
     st.markdown(
         f'<div class="app-header">'
-        f'<div class="brand">📈 AL<span>Dash</span></div>'
+        f'<div class="brand">{wordmark(24, "hdr")}</div>'
         f'<div class="sub">{subtitle_html}</div>'
         f'</div>',
         unsafe_allow_html=True,
