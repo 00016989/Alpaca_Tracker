@@ -234,7 +234,8 @@ def render():
         if equity is None:
             cards.append(ui.account_card(cfg.name, "—", "—", 0, "error", cfg.paper))
         else:
-            cards.append(ui.account_card(cfg.name, fmt.money(equity), fmt.money(cash),
+            balance = equity - float_pl
+            cards.append(ui.account_card(cfg.name, fmt.money(equity), fmt.money(balance),
                                          float_pl, fmt.money(float_pl), cfg.paper))
     ui.account_row(cards)
 
