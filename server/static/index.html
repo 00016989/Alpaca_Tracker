@@ -630,14 +630,17 @@ el("tabs").querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
 
 /* ---------- refresh loop ---------- */
 let _seq=0;
-async function refresh(){
+async function refresh(fresh=false){
   const my=++_seq;                       // only the latest request is allowed to render
   try{
-    const d=await api("/api/dashboard?scope="+encodeURIComponent(STATE.scope));
+    const d=await api("/api/dashboard?scope="+encodeURIComponent(STATE.scope)+(fresh?"&fresh=1":""));
     if(my!==_seq) return;                // a newer switch superseded this one — drop it
     STATE.scope=d.scope; render(d);
   }catch(err){ if(err.message!=="auth") console.error(err); }
 }
+// Warm every account's cache in the background (one call computes them all),
+// so switching to any account is instant.
+function warmAll(){ fetch("/api/dashboard?scope=all&fresh=1",{headers:{'Content-Type':'application/json'}}).catch(()=>{}); }
 function reloadTab(){
   if(STATE.tab==="orders") renderOrders();
   else if(STATE.tab==="tradelog") renderTradelog();
@@ -650,16 +653,21 @@ async function onScope(scope){           // account picked in sidebar
   await refresh();
   if(STATE.tab!=="positions") reloadTab();
 }
+let warmTimer=null;
 function reschedule(){
   if(timer) clearInterval(timer);
-  if(STATE.auto) timer=setInterval(()=>{ if(STATE.tab==="positions") refresh(); }, STATE.intv*1000);
+  if(warmTimer) clearInterval(warmTimer);
+  if(STATE.auto){
+    timer=setInterval(()=>{ if(STATE.tab==="positions") refresh(true); }, STATE.intv*1000);
+    warmTimer=setInterval(warmAll, 8000);   // keep all accounts warm → instant switches
+  }
 }
-function start(){ refresh(); reschedule(); }
+function start(){ refresh().then(warmAll); reschedule(); }
 
 /* sidebar controls */
 el("autoRefresh").addEventListener("change",e=>{ STATE.auto=e.target.checked; reschedule(); });
 el("intv").addEventListener("input",e=>{ STATE.intv=+e.target.value; el("intvVal").textContent=e.target.value+"s"; reschedule(); });
-el("refreshNow").addEventListener("click",refresh);
+el("refreshNow").addEventListener("click",()=>refresh(true));
 el("addToggle").addEventListener("click",()=>el("addForm").classList.toggle("hidden"));
 el("addForm").addEventListener("submit",async e=>{
   e.preventDefault();

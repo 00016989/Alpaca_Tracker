@@ -64,7 +64,7 @@ _series_cache: dict[str, tuple[float, list]] = {}    # name -> (ts, series)
 _payload_cache: dict[str, tuple[float, dict]] = {}   # name -> (ts, payload)
 _fills_cache: dict[tuple, tuple[float, list]] = {}   # (name, days) -> (ts, fills)
 
-PAYLOAD_TTL = 3.0     # short: keeps account-switch/tab snappy, still live within refresh
+PAYLOAD_TTL = 12.0    # switches read cache (instant); auto-refresh asks for fresh
 FILLS_TTL = 120.0     # trade-log fills change rarely
 
 
@@ -128,11 +128,15 @@ def _account_payload(cfg: AccountConfig) -> dict:
     return out
 
 
-def _payload(cfg: AccountConfig) -> dict:
-    """Account payload with a short TTL cache so rapid switches feel instant."""
-    hit = _payload_cache.get(cfg.name)
-    if hit and (time.time() - hit[0]) < PAYLOAD_TTL:
-        return hit[1]
+def _payload(cfg: AccountConfig, fresh: bool = False) -> dict:
+    """Account payload, cached so switching accounts is instant.
+
+    `fresh=True` (auto-refresh / Refresh now) bypasses the cache for live data.
+    """
+    if not fresh:
+        hit = _payload_cache.get(cfg.name)
+        if hit and (time.time() - hit[0]) < PAYLOAD_TTL:
+            return hit[1]
     p = _account_payload(cfg)
     if not p["error"]:
         _payload_cache[cfg.name] = (time.time(), p)
@@ -186,7 +190,7 @@ def logout(resp: Response):
 
 
 @app.get("/api/dashboard")
-def dashboard(scope: str = "all", aldash_auth: Optional[str] = Cookie(None)):
+def dashboard(scope: str = "all", fresh: int = 0, aldash_auth: Optional[str] = Cookie(None)):
     _require(aldash_auth)
     accounts = _accounts()
     acct_list = [{"name": a.name, "paper": a.paper, "managed": a.managed} for a in accounts]
@@ -198,7 +202,7 @@ def dashboard(scope: str = "all", aldash_auth: Optional[str] = Cookie(None)):
         selected = [one] if one else accounts
         scope = scope if one else "all"
 
-    data = [_payload(cfg) for cfg in selected]
+    data = [_payload(cfg, fresh=bool(fresh)) for cfg in selected]
     ok = [d for d in data if not d["error"]]
 
     total_eq = sum(d["equity"] for d in ok)
