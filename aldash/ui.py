@@ -126,6 +126,24 @@ section[data-testid="stSidebar"] .stFormSubmitButton > button[kind*="primary"]:h
 section[data-testid="stSidebar"] .stButton > button[kind*="primary"] p,
 section[data-testid="stSidebar"] .stFormSubmitButton > button[kind*="primary"] p { color:#fff !important; }
 
+/* account select buttons: colored left-accent by type (live=red, paper=amber) */
+section[data-testid="stSidebar"] [class*="st-key-accbtn_live_"] button:not([kind*="primary"]) {
+  border-left:3px solid var(--neg); padding-left:13px;
+}
+section[data-testid="stSidebar"] [class*="st-key-accbtn_paper_"] button:not([kind*="primary"]) {
+  border-left:3px solid var(--amber); padding-left:13px;
+}
+
+/* trash: subtle ghost icon button that goes red on hover */
+section[data-testid="stSidebar"] [class*="st-key-trash_"] button {
+  min-height:46px; padding:0; border:1px solid var(--border); background:var(--surface-2);
+  color:var(--text-3); box-shadow:none; justify-content:center; font-size:15px;
+}
+section[data-testid="stSidebar"] [class*="st-key-trash_"] button:hover {
+  background:#fef2f2; color:var(--neg); border-color:#fecaca;
+}
+section[data-testid="stSidebar"] [class*="st-key-trash_"] button p { color:inherit !important; }
+
 /* ---------- tables ---------- */
 [data-testid="stDataFrame"] { border:1px solid var(--border); border-radius:12px; overflow:hidden; }
 

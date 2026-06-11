@@ -92,20 +92,21 @@ st.session_state.setdefault("account_choice", ALL_ACCOUNTS)
 
 st.sidebar.markdown("**Accounts**")
 
-if st.sidebar.button(f"★  All accounts  ·  {len(accounts)}", key="accbtn_all", width="stretch",
+if st.sidebar.button(f"All accounts  ·  {len(accounts)}", key="accbtn_all", width="stretch",
                      type="primary" if st.session_state["account_choice"] == ALL_ACCOUNTS else "secondary"):
     st.session_state["account_choice"] = ALL_ACCOUNTS
     st.rerun()
 
 for a in accounts:
-    badge = "🟡 Paper" if a.paper else "🔴 Live"
+    kind = "paper" if a.paper else "live"
     active = st.session_state["account_choice"] == a.name
     col_sel, col_del = st.sidebar.columns([5, 1], vertical_alignment="center")
-    if col_sel.button(f"{a.name}  ·  {badge}", key=f"accbtn_{a.name}", width="stretch",
+    # Type is shown via the colored left-accent (CSS) — the name already says (Live)/(Paper).
+    if col_sel.button(a.name, key=f"accbtn_{kind}_{a.name}", width="stretch",
                       type="primary" if active else "secondary"):
         st.session_state["account_choice"] = a.name
         st.rerun()
-    if col_del.button("🗑️", key=f"trash_{a.name}", width="stretch",
+    if col_del.button("🗑", key=f"trash_{a.name}", width="stretch",
                       help=f"Delete {a.name}"):
         st.session_state["pending_delete"] = a.name
         st.rerun()
@@ -130,7 +131,7 @@ selected = list(accounts) if choice == ALL_ACCOUNTS else [name_to_cfg.get(choice
 selected = [a for a in selected if a is not None] or list(accounts)
 
 # Quick add-account, right where the account list is.
-with st.sidebar.expander("➕  Add account"):
+with st.sidebar.expander("Add an account"):
     with st.form("sidebar_add_account", clear_on_submit=True):
         new_name = st.text_input("Name", placeholder="e.g. Swing (Live)")
         new_type = st.selectbox("Type", ["Paper", "Live"])
