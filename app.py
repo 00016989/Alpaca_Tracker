@@ -245,13 +245,9 @@ def render():
         float_pl = sum(r.unrealized_pl for r in rows)
         day_pl = equity - last_equity
 
-        # Balance = total exposure (Σ market value) + cash + realized PnL.
-        exposure = sum(r.market_value for r in rows)
-        try:
-            realized = cached_realized_pnl(cfg.name, cfg.api_key, cfg.api_secret, cfg.paper)
-        except Exception:
-            realized = 0.0
-        balance = exposure + cash + realized
+        # Balance = equity − floating PnL, i.e. starting balance + realized PnL:
+        # the settled balance you'd have if you hadn't opened the current trades.
+        balance = equity - float_pl
 
         total_equity += equity
         total_cash += cash
