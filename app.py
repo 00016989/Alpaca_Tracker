@@ -4,6 +4,8 @@ Run with:  streamlit run app.py
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
@@ -15,7 +17,12 @@ from aldash.config import AccountConfig, load_accounts
 from aldash.positions import ConsolidatedPosition, consolidate
 from aldash.tradelog import fetch_filled_orders, fifo_round_trips, summarize
 
-st.set_page_config(page_title="ALDash", page_icon="📈", layout="wide")
+_FAVICON = Path(__file__).parent / "aldash" / "assets" / "logo.png"
+st.set_page_config(
+    page_title="ALDash",
+    page_icon=str(_FAVICON) if _FAVICON.exists() else "📈",
+    layout="wide",
+)
 ui.inject_css()
 require_login()  # password gate (no-op if ALDASH_PASSWORD is unset)
 
