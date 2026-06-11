@@ -16,21 +16,35 @@ MUTED = "#5a6675"
 
 _CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root{
-  --bg:#0e1117; --surface:#161b24; --surface-2:#1b212c;
-  --border:#232b38; --border-strong:#33404f;
-  --text:#e7ecf3; --text-2:#9aa6b6; --text-3:#6b7787;
-  --accent:#10b981; --accent-strong:#0d9b6c; --accent-weak:rgba(16,185,129,.13);
-  --pos:#16c784; --neg:#f4525f; --amber:#f59e0b;
-  --shadow-sm:0 1px 2px rgba(0,0,0,.28), 0 1px 3px rgba(0,0,0,.22);
-  --shadow-md:0 6px 20px rgba(0,0,0,.38), 0 2px 6px rgba(0,0,0,.28);
+  --bg:#090C12; --surface:#10141D; --surface-2:#141926; --raised:#1A2030;
+  --border:rgba(148,163,184,.09); --border-strong:rgba(148,163,184,.16);
+  --text:#EAEDF3; --text-2:#8A93A6; --text-3:#576074;
+  --accent:#35E0A1; --accent-strong:#1FB07E; --accent-weak:rgba(53,224,161,.14);
+  --pos:#35E0A1; --neg:#FF647C; --amber:#F2B544; --live:#FF5470;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --display:'Space Grotesk',system-ui,sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.30), 0 1px 3px rgba(0,0,0,.24);
+  --shadow-md:0 8px 26px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.30);
 }
 
-html, body, [class*="css"], .stMarkdown, .stMetric { font-family: 'Inter', system-ui, sans-serif; }
+html, body, [class*="css"], .stMarkdown, .stMetric { font-family: var(--body); }
 .stApp { background: var(--bg); }
+.stApp::before { content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(1100px 600px at 78% -8%, rgba(53,224,161,.07), transparent 60%),
+    radial-gradient(900px 500px at -5% 110%, rgba(60,110,255,.05), transparent 55%); }
+[data-testid="stAppViewContainer"], section[data-testid="stSidebar"] { position:relative; z-index:1; }
 body, .stMarkdown, p, span, label { color: var(--text); }
+/* monospace for all numeric displays — the "terminal" look */
+.kpi-value, .acct-eq, .acct-stat .v, .hero-eq, .hero-stat .v, .num,
+.ptbl-row .r, .rr-ratio, .rr-amts, .rr-scale, .p-sub,
+table.dtbl tbody td, .kpi-sub { font-family:var(--mono); font-feature-settings:"tnum" 1; }
+/* display font for brand + tickers + headings */
+.hd-name, .hero-name, .p-sym, .tk { font-family:var(--display); }
 
 .block-container { padding-top: 1.2rem; padding-bottom: 3rem; max-width: 1480px; }
 
@@ -61,9 +75,10 @@ header[data-testid="stHeader"] { background: transparent; height: 0; }
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
 .kpi-card:hover { border-color:var(--border-strong); transform: translateY(-2px); box-shadow:var(--shadow-md); }
-.kpi-label { color:var(--text-3); font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.8px; margin-bottom:10px; }
-.kpi-value { font-size:26px; font-weight:800; color:var(--text); line-height:1.05; letter-spacing:-.6px; font-variant-numeric:tabular-nums; }
-.kpi-sub { font-size:12.5px; font-weight:600; margin-top:8px; }
+.kpi-card.feature { background:linear-gradient(140deg,rgba(53,224,161,.10),var(--surface) 55%); border-color:rgba(53,224,161,.22); }
+.kpi-label { color:var(--text-3); font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:1.3px; margin-bottom:10px; }
+.kpi-value { font-size:24px; font-weight:600; color:var(--text); line-height:1.05; letter-spacing:-.5px; }
+.kpi-sub { font-size:12px; font-weight:600; margin-top:8px; }
 
 /* ---------- account cards ---------- */
 .acct-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:12px; margin-bottom:6px; }
@@ -260,9 +275,12 @@ table.dtbl tbody tr:last-child td { border-bottom:none; }
 
 /* ---------- header (rich) ---------- */
 .hd { display:flex; align-items:center; justify-content:space-between;
-  padding:16px 22px; border-radius:18px; margin-bottom:20px;
-  background:linear-gradient(135deg,#18202b 0%,#10211b 100%);
+  padding:18px 22px; border-radius:14px; margin-bottom:20px; position:relative; overflow:hidden;
+  background:linear-gradient(120deg,rgba(53,224,161,.06),var(--surface) 42%);
   border:1px solid var(--border); box-shadow:var(--shadow-sm); }
+.hd::after { content:""; position:absolute; right:-40px; top:-60px; width:240px; height:240px;
+  border-radius:50%; background:radial-gradient(circle,rgba(53,224,161,.10),transparent 70%); }
+.hd-l, .hd-r { position:relative; z-index:1; }
 .hd-l { display:flex; align-items:center; gap:14px; }
 .hd-mark { width:52px; height:52px; border-radius:14px; display:flex; align-items:center;
   justify-content:center; background:linear-gradient(135deg,#10b981,#047857);
@@ -323,18 +341,18 @@ table.dtbl tbody tr:last-child td { border-bottom:none; }
 .p-badge.short { background:rgba(244,82,95,.16); color:#ff6b75; }
 .p-badge .msym { font-size:13px; vertical-align:-2px; }
 
-/* risk:reward bar */
-.rr { padding:0 6px; }
-.rr-topline { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; font-size:11.5px; }
-.rr-ratio { font-weight:800; color:var(--text); }
-.rr-ratio span { color:var(--text-3); font-weight:600; font-size:10px; margin-left:3px; }
-.rr-amts { font-weight:700; font-variant-numeric:tabular-nums; }
-.rr-track { position:relative; height:7px; border-radius:6px;
-  background:linear-gradient(90deg,#f4525f 0%,#f59e0b 50%,#16c784 100%); }
-.rr-mark { position:absolute; top:-3px; width:3px; height:13px; border-radius:2px;
-  background:#fff; box-shadow:0 0 0 2px var(--surface), 0 1px 4px rgba(0,0,0,.5); transform:translateX(-50%); }
-.rr-scale { display:flex; justify-content:space-between; margin-top:5px; font-size:10px; color:var(--text-3);
-  font-variant-numeric:tabular-nums; }
+/* risk:reward gauge — proportional risk vs reward split */
+.rr { padding:0 6px; display:flex; flex-direction:column; gap:5px; }
+.rr-topline { display:flex; align-items:baseline; justify-content:space-between; font-size:11px; }
+.rr-ratio { font-weight:700; color:var(--text); font-size:14px; }
+.rr-ratio span { color:var(--text-3); font-weight:500; font-size:10px; margin-left:3px; }
+.rr-amts { font-weight:600; font-size:11px; }
+.rr-bar { position:relative; height:7px; border-radius:6px; overflow:hidden; display:flex; background:var(--raised); }
+.rr-bar .risk { background:linear-gradient(90deg,rgba(255,100,124,.35),var(--neg)); }
+.rr-bar .reward { background:linear-gradient(90deg,var(--pos),rgba(53,224,161,.35)); }
+.rr-now { position:absolute; top:-3px; width:2px; height:13px; background:#fff; border-radius:2px;
+  box-shadow:0 0 6px rgba(255,255,255,.7); }
+.rr-scale { display:flex; justify-content:space-between; font-size:9.5px; color:var(--text-3); }
 .rr-scale .now { color:var(--text-2); font-weight:600; }
 .rr-none { color:var(--text-3); font-size:11.5px; }
 
@@ -435,10 +453,12 @@ def _sub(value: Optional[float], text: str) -> str:
 
 
 def kpi_card(label: str, value: str, sub_value: Optional[float] = None,
-             sub_text: Optional[str] = None, ic: Optional[str] = None) -> str:
+             sub_text: Optional[str] = None, ic: Optional[str] = None,
+             feature: bool = False) -> str:
     icon_html = icon(ic) if ic else ""
+    cls = "kpi-card feature" if feature else "kpi-card"
     return (
-        f'<div class="kpi-card"><div class="kpi-label">{icon_html}{label}</div>'
+        f'<div class="{cls}"><div class="kpi-label">{icon_html}{label}</div>'
         f'<div class="kpi-value">{value}</div>{_sub(sub_value, sub_text)}</div>'
     )
 
@@ -492,7 +512,7 @@ def sparkline(values, width: int = 440, height: int = 116, idn: str = "s") -> st
     ys = [pad + (1 - (v - lo) / rng) * (h - 2 * pad) for v in vals]
     line = "M " + " L ".join(f"{x:.1f} {y:.1f}" for x, y in zip(xs, ys))
     area = line + f" L {xs[-1]:.1f} {h - pad:.1f} L {xs[0]:.1f} {h - pad:.1f} Z"
-    col = "#16c784" if vals[-1] >= vals[0] else "#f4525f"
+    col = "#35E0A1" if vals[-1] >= vals[0] else "#FF647C"
     return (
         f'<svg width="100%" height="{h}" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
         f'xmlns="http://www.w3.org/2000/svg" style="display:block">'
@@ -541,19 +561,24 @@ def _rr_cell(pos) -> str:
     sl, tp, cur = pos.stop_loss, pos.take_profit, pos.current_price
     if sl is None or tp is None:
         return '<div class="rr-none">No SL / TP set</div>'
-    frac = (cur - sl) / (tp - sl) if (tp - sl) else 0.0
-    frac = max(0.0, min(1.0, frac)) * 100.0
-    rr = pos.risk_reward
-    ratio = f"{rr:.2f}" if rr is not None else "—"
     sla = pos.sl_amount or 0.0
     tpa = pos.tp_amount or 0.0
+    risk, reward = abs(sla), abs(tpa)
+    total = (risk + reward) or 1.0
+    risk_w = risk / total * 100.0
+    reward_w = reward / total * 100.0
+    now = max(2.0, min(98.0, (cur - sl) / (tp - sl) * 100.0)) if (tp - sl) else 50.0
+    rr = pos.risk_reward
+    ratio = f"{rr:.2f}" if rr is not None else "—"
     return (
         f'<div class="rr">'
         f'<div class="rr-topline">'
-        f'<span class="rr-ratio">{ratio}<span>R:R</span></span>'
+        f'<span class="rr-ratio">{ratio}<span> R:R</span></span>'
         f'<span class="rr-amts"><span class="neg">{_money_signed(sla)}</span>'
         f'<span class="dim"> / </span><span class="pos">{_money_signed(tpa)}</span></span></div>'
-        f'<div class="rr-track"><div class="rr-mark" style="left:{frac:.1f}%"></div></div>'
+        f'<div class="rr-bar"><div class="risk" style="width:{risk_w:.1f}%"></div>'
+        f'<div class="reward" style="width:{reward_w:.1f}%"></div>'
+        f'<div class="rr-now" style="left:{now:.1f}%"></div></div>'
         f'<div class="rr-scale"><span>{_price(sl)}</span>'
         f'<span class="now">now {_price(cur)}</span><span>{_price(tp)}</span></div>'
         f'</div>'

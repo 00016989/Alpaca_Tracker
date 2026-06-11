@@ -268,7 +268,8 @@ def render():
     n_acct = sum(1 for m in per_account_metrics if m["equity"] is not None)
 
     ui.kpi_row([
-        ui.kpi_card("Total Equity", fmt.money(total_equity), total_day_pl, fmt.pct(day_pct), ic="account_balance"),
+        ui.kpi_card("Total Equity", fmt.money(total_equity), total_day_pl, fmt.pct(day_pct),
+                    ic="account_balance", feature=True),
         ui.kpi_card("Floating PnL", fmt.money(total_float_pl), total_float_pl, fmt.pct(float_pct), ic="trending_up"),
         ui.kpi_card("Today's PnL", fmt.money(total_day_pl), total_day_pl, fmt.pct(day_pct), ic="schedule"),
         ui.kpi_card("Cash", fmt.money(total_cash), None, "available", ic="account_balance_wallet"),
