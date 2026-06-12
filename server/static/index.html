@@ -137,7 +137,7 @@
   .spark-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--brand);border:2px solid var(--panel);display:none;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(53,224,161,.7)}
   .spark-tip{position:absolute;transform:translate(-50%,calc(-100% - 10px));background:var(--panel-2);border:1px solid var(--line-strong);border-radius:8px;padding:5px 10px;font-family:var(--mono);font-size:12px;font-weight:600;white-space:nowrap;display:none;pointer-events:none;box-shadow:0 8px 18px rgba(0,0,0,.55);z-index:5}
 
-  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:0;z-index:20;background:var(--ink);padding-top:6px}
   .tab{display:flex;align-items:center;gap:8px;padding:11px 16px;cursor:pointer;color:var(--muted);font-size:13.5px;font-weight:500;font-family:var(--body);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s;white-space:nowrap}
   .tab svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.7;fill:none}
   .tab:hover{color:var(--text)}
@@ -227,18 +227,21 @@
   @media(max-width:1180px){.kpis,.pstats{grid-template-columns:repeat(3,1fr)}.hero{grid-template-columns:1fr}.hero-left{border-right:none;border-bottom:1px solid var(--line)}}
   @media(max-width:900px){
     .app{grid-template-columns:1fr}
-    .sidebar{position:fixed;top:0;left:0;bottom:0;width:min(82vw,300px);height:100vh;z-index:60;
-      transform:translateX(-100%);transition:transform .24s ease;box-shadow:0 24px 60px rgba(0,0,0,.7)}
+    .sidebar{position:fixed;top:0;right:0;bottom:0;left:auto;width:min(82vw,300px);height:100vh;z-index:60;
+      border-right:none;border-left:1px solid var(--line);
+      transform:translateX(100%);transition:transform .24s ease;box-shadow:0 24px 60px rgba(0,0,0,.7)}
     .app.nav-open .sidebar{transform:none}
     .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:55;opacity:0;pointer-events:none;transition:opacity .2s}
     .app.nav-open .scrim{opacity:1;pointer-events:auto}
-    .menu-btn{display:flex;align-items:center;justify-content:center;position:fixed;top:13px;left:14px;
+    .menu-btn{display:flex;align-items:center;justify-content:center;position:fixed;top:13px;right:14px;
       width:44px;height:44px;z-index:50;border-radius:12px;border:1px solid var(--line-strong);
       background:var(--panel-2);color:var(--text);cursor:pointer}
     .menu-btn svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none}
     .main{padding:64px 16px 36px}
     .topbar{padding:16px 18px}
     .tb-title{font-size:20px}
+    /* keep the sticky tab bar clear of the fixed hamburger */
+    .tabs{padding-right:52px}
   }
   @media(max-width:640px){.kpis,.pstats{grid-template-columns:repeat(2,1fr)}.hero-eq{font-size:34px}.grid-form{grid-template-columns:1fr}
     .hero-left,.hero-right{padding:18px}.hero-meta{gap:24px}.tb-right{text-align:left}}
