@@ -167,6 +167,12 @@ def _combine_series(serieses: list) -> list:
 # ──────────────────────────────────────────────────────────────────────────
 # API
 # ──────────────────────────────────────────────────────────────────────────
+@app.get("/healthz")
+def healthz():
+    """Tiny no-auth endpoint for uptime pingers (keeps free hosts awake)."""
+    return {"ok": True}
+
+
 @app.get("/api/me")
 def me(aldash_auth: Optional[str] = Cookie(None)):
     return {"authed": _is_authed(aldash_auth), "protected": bool(_expected_password())}

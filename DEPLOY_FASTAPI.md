@@ -36,25 +36,28 @@ is ephemeral, so for permanent accounts use the env vars above.)
 
 ---
 
-## Deploy on Koyeb (free, **always-on**, no credit card) — recommended
+## Free + always-on, no credit card — Render Free + an uptime pinger ⭐
 
-Koyeb's free instance stays running (no cold-start sleep) and needs no card —
-the closest to "always available" for free. It builds the included `Dockerfile`.
+The simplest **free, no-card** path. Render Free sleeps after ~15 min idle, so we
+keep it awake with a free uptime monitor that pings `/healthz` every ~10 min.
+Net result: always available, $0, no card.
 
-1. Push this repo to GitHub (private is fine — keys go in env vars, not the repo).
-2. Sign up at **https://www.koyeb.com** with GitHub (no card).
-3. **Create Web Service → GitHub → select your repo.**
-4. Build: Koyeb auto-detects the **Dockerfile**. Leave the run command as is.
-5. **Instance:** pick the **Free** instance. **Port:** `8000`.
-6. **Environment variables → add** `ALDASH_PASSWORD` and the `ALDASH_ACCOUNT_*`
-   values (see the table above). Mark them as *Secret*.
-7. **Deploy.** You get a URL like `https://aldash-yourname.koyeb.app`.
+**Step A — deploy on Render (see below).** No card required.
 
-> Free tiers change over time. If Koyeb ever adds limits, the other always-on
-> free route is **Oracle Cloud Always Free** (a real free VM, but needs a card +
-> manual setup). Render/Railway/Fly below also work with the same Dockerfile.
+**Step B — keep it awake (free):**
+1. Sign up at **https://uptimerobot.com** (free, no card) — or
+   **https://cron-job.org** (also free).
+2. Add a new **HTTP(s) monitor** pointing at `https://<your-app>.onrender.com/healthz`.
+3. Set the interval to **5–10 minutes**.
+4. That steady traffic stops Render from idling, so it never cold-starts.
 
-## Deploy on Render (free, but sleeps when idle)
+> Note on free tiers: a *true* always-on host with **no card at all** basically
+> doesn't exist anymore (Koyeb/Railway/Fly now require a card). This Render +
+> pinger combo is the practical no-card way to stay always-on. If you're willing
+> to add a card (even on a $0 plan), **Fly.io** or **Oracle Cloud Always Free**
+> stay on without a pinger — the included `Dockerfile` works on both.
+
+## Deploy on Render (free)
 
 1. Push this repo to GitHub (private — your keys go in env vars, not the repo).
 2. Go to **https://render.com → New + → Blueprint** and select the repo.
