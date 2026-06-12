@@ -738,7 +738,8 @@ function reloadTab(){
   else if(STATE.tab==="news") renderNews();
   else if(STATE.tab==="trade") renderTrade();
 }
-function closeNav(){ el("appRoot").classList.remove("nav-open"); }
+function setNav(open){ el("appRoot").classList.toggle("nav-open",open); document.body.style.overflow=open?"hidden":""; }
+function closeNav(){ setNav(false); }
 async function onScope(scope){           // account picked in sidebar
   closeNav();                            // close the mobile drawer on pick
   if(scope===STATE.scope) return;        // already selected — no-op
@@ -770,8 +771,8 @@ el("addForm").addEventListener("submit",async e=>{
 });
 
 // mobile drawer
-el("menuBtn").addEventListener("click",()=>el("appRoot").classList.toggle("nav-open"));
-el("scrim").addEventListener("click",()=>el("appRoot").classList.remove("nav-open"));
+el("menuBtn").addEventListener("click",()=>setNav(!el("appRoot").classList.contains("nav-open")));
+el("scrim").addEventListener("click",closeNav);
 
 // theme toggle (dark ⇄ cream)
 function applyTheme(t){
