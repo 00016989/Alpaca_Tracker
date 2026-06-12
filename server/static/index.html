@@ -162,10 +162,11 @@
   .spark-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--brand);border:2px solid var(--panel);display:none;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(53,224,161,.7)}
   .spark-tip{position:absolute;transform:translate(-50%,calc(-100% - 10px));background:var(--panel-2);border:1px solid var(--line-strong);border-radius:8px;padding:5px 10px;font-family:var(--mono);font-size:12px;font-weight:600;white-space:nowrap;display:none;pointer-events:none;box-shadow:0 8px 18px rgba(0,0,0,.55);z-index:5}
 
-  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:0;z-index:20;padding-top:6px;background:var(--ink)}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;position:relative;padding-top:6px;
+    scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
   .tab-ind{position:absolute;bottom:-1px;left:0;width:0;height:2px;border-radius:2px;background:var(--brand);pointer-events:none;
     box-shadow:0 0 10px rgba(53,224,161,.6);transition:left .3s cubic-bezier(.34,1.2,.4,1), width .3s cubic-bezier(.34,1.2,.4,1)}
-  .tab{display:flex;align-items:center;gap:8px;padding:11px 16px;cursor:pointer;color:var(--muted);font-size:13.5px;font-weight:500;font-family:var(--body);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s;white-space:nowrap}
+  .tab{display:flex;align-items:center;gap:8px;padding:11px 16px;cursor:pointer;color:var(--muted);font-size:13.5px;font-weight:500;font-family:var(--body);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;white-space:nowrap;scroll-snap-align:start;flex:none}
   .tab svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.7;fill:none}
   .tab:hover{color:var(--text)}
   .tab.active{color:var(--text)}
@@ -271,8 +272,7 @@
     .main{padding:64px 16px 36px}
     .topbar{padding:16px 18px}
     .tb-title{font-size:20px}
-    /* keep the sticky tab bar clear of the fixed hamburger */
-    .tabs{padding-right:52px}
+    .tabs{padding-right:8px}
   }
   @media(max-width:640px){.kpis,.pstats{grid-template-columns:repeat(2,1fr)}.hero-eq{font-size:34px}.grid-form{grid-template-columns:1fr}
     .hero-left,.hero-right{padding:18px}.hero-meta{gap:24px}.tb-right{text-align:left}}
@@ -390,7 +390,8 @@ async function api(path, opts={}){
 
 /* ---------- auth ---------- */
 function showLogin(){ el("login").classList.remove("hidden"); el("appRoot").classList.add("hidden"); }
-function showApp(){ el("login").classList.add("hidden"); el("appRoot").classList.remove("hidden"); setTimeout(moveTabInd,80); requestAnimationFrame(moveTabInd); }
+function showApp(){ el("login").classList.add("hidden"); el("appRoot").classList.remove("hidden");
+  setTimeout(moveTabInd,80); requestAnimationFrame(moveTabInd); }
 async function boot(){
   const me = await fetch("/api/me").then(r=>r.json());
   if(me.protected) el("logout").classList.remove("hidden");
