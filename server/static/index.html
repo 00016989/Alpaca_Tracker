@@ -162,15 +162,13 @@
   .spark-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--brand);border:2px solid var(--panel);display:none;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(53,224,161,.7)}
   .spark-tip{position:absolute;transform:translate(-50%,calc(-100% - 10px));background:var(--panel-2);border:1px solid var(--line-strong);border-radius:8px;padding:5px 10px;font-family:var(--mono);font-size:12px;font-weight:600;white-space:nowrap;display:none;pointer-events:none;box-shadow:0 8px 18px rgba(0,0,0,.55);z-index:5}
 
-  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:0;z-index:20;padding-top:6px;
-    background:linear-gradient(180deg, rgba(53,224,161,.14), transparent 78%), var(--ink);
-    box-shadow:0 12px 22px -14px rgba(53,224,161,.45)}
-  [data-theme="light"] .tabs{background:linear-gradient(180deg, rgba(16,168,119,.12), transparent 78%), var(--ink);
-    box-shadow:0 12px 22px -14px rgba(16,168,119,.32)}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:0;z-index:20;padding-top:6px;background:var(--ink)}
+  .tab-ind{position:absolute;bottom:-1px;left:0;width:0;height:2px;border-radius:2px;background:var(--brand);pointer-events:none;
+    box-shadow:0 0 10px rgba(53,224,161,.6);transition:left .3s cubic-bezier(.34,1.2,.4,1), width .3s cubic-bezier(.34,1.2,.4,1)}
   .tab{display:flex;align-items:center;gap:8px;padding:11px 16px;cursor:pointer;color:var(--muted);font-size:13.5px;font-weight:500;font-family:var(--body);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s;white-space:nowrap}
   .tab svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.7;fill:none}
   .tab:hover{color:var(--text)}
-  .tab.active{color:var(--text);border-bottom-color:var(--brand)}
+  .tab.active{color:var(--text)}
 
   .pstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
   .pstat{padding:15px 17px;border-radius:var(--radius);border:1px solid var(--line);background:var(--panel-2)}
@@ -361,6 +359,7 @@
       <button class="tab" data-tab="tradelog"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/></svg>Trade Log</button>
       <button class="tab" data-tab="trade"><svg viewBox="0 0 24 24"><path d="M7 3v18M17 3v18M3 8h8M3 16h8M13 8h8M13 16h8"/></svg>Trade</button>
       <button class="tab" data-tab="news"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h6M7 16h8"/></svg>News</button>
+      <div class="tab-ind" id="tabInd"></div>
     </div>
 
     <div id="tabContent"></div>
@@ -391,7 +390,7 @@ async function api(path, opts={}){
 
 /* ---------- auth ---------- */
 function showLogin(){ el("login").classList.remove("hidden"); el("appRoot").classList.add("hidden"); }
-function showApp(){ el("login").classList.add("hidden"); el("appRoot").classList.remove("hidden"); }
+function showApp(){ el("login").classList.add("hidden"); el("appRoot").classList.remove("hidden"); setTimeout(moveTabInd,80); requestAnimationFrame(moveTabInd); }
 async function boot(){
   const me = await fetch("/api/me").then(r=>r.json());
   if(me.protected) el("logout").classList.remove("hidden");
@@ -702,10 +701,19 @@ async function renderNews(){
 
 /* ---------- tabs ---------- */
 function fadeTab(){ const c=el("tabContent"); c.style.animation="none"; void c.offsetWidth; c.style.animation="fadeIn .2s ease"; }
+// slide the underline to the active tab
+function moveTabInd(){
+  const a=el("tabs").querySelector(".tab.active"), ind=el("tabInd");
+  if(a&&ind&&a.offsetWidth){ ind.style.left=a.offsetLeft+"px"; ind.style.width=a.offsetWidth+"px"; }
+}
+window.addEventListener("resize",moveTabInd);
+window.addEventListener("load",moveTabInd);
 el("tabs").querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
   if(t.classList.contains("active")) return;            // already here — no-op
   el("tabs").querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-  t.classList.add("active"); STATE.tab=t.dataset.tab; fadeTab();
+  t.classList.add("active"); STATE.tab=t.dataset.tab; moveTabInd(); fadeTab();
+  // keep the newly-active tab in view (and the indicator with it)
+  t.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"});
   if(STATE.tab==="positions") refresh(); else reloadTab();
 }));
 
