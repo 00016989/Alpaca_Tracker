@@ -33,6 +33,17 @@ COOKIE = "aldash_auth"
 app = FastAPI(title="ALDash")
 
 
+@app.middleware("http")
+async def no_cache_html(request, call_next):
+    """Never let the HTML / service worker be cached, so updates always show."""
+    resp = await call_next(request)
+    path = request.url.path
+    if path == "/" or path.endswith(".html") or path.endswith("sw.js"):
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+    return resp
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Auth (stateless signed cookie; no-op when no password is configured)
 # ──────────────────────────────────────────────────────────────────────────
