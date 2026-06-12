@@ -36,7 +36,25 @@ is ephemeral, so for permanent accounts use the env vars above.)
 
 ---
 
-## Deploy on Render (recommended, free)
+## Deploy on Koyeb (free, **always-on**, no credit card) — recommended
+
+Koyeb's free instance stays running (no cold-start sleep) and needs no card —
+the closest to "always available" for free. It builds the included `Dockerfile`.
+
+1. Push this repo to GitHub (private is fine — keys go in env vars, not the repo).
+2. Sign up at **https://www.koyeb.com** with GitHub (no card).
+3. **Create Web Service → GitHub → select your repo.**
+4. Build: Koyeb auto-detects the **Dockerfile**. Leave the run command as is.
+5. **Instance:** pick the **Free** instance. **Port:** `8000`.
+6. **Environment variables → add** `ALDASH_PASSWORD` and the `ALDASH_ACCOUNT_*`
+   values (see the table above). Mark them as *Secret*.
+7. **Deploy.** You get a URL like `https://aldash-yourname.koyeb.app`.
+
+> Free tiers change over time. If Koyeb ever adds limits, the other always-on
+> free route is **Oracle Cloud Always Free** (a real free VM, but needs a card +
+> manual setup). Render/Railway/Fly below also work with the same Dockerfile.
+
+## Deploy on Render (free, but sleeps when idle)
 
 1. Push this repo to GitHub (private — your keys go in env vars, not the repo).
 2. Go to **https://render.com → New + → Blueprint** and select the repo.

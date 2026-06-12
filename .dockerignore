@@ -1,0 +1,15 @@
+# Never bake secrets or local cruft into the image — pass secrets as env vars.
+.env
+.streamlit/secrets.toml
+accounts.json
+.git
+.gitignore
+__pycache__/
+**/__pycache__/
+*.pyc
+.venv/
+venv/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
