@@ -57,7 +57,9 @@
   a{color:inherit}
 
   /* sidebar */
-  .sidebar{border-right:1px solid var(--line);padding:22px 18px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--ink)}
+  .sidebar{border-right:1px solid var(--line);padding:22px 18px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:radial-gradient(170% 65% at 22% 116%, rgba(53,224,161,.22), rgba(53,224,161,.06) 38%, transparent 62%), var(--ink)}
+  [data-theme="light"] .sidebar{background:radial-gradient(170% 65% at 22% 116%, rgba(16,168,119,.20), rgba(16,168,119,.05) 38%, transparent 62%), var(--ink)}
   .brand{display:flex;align-items:center;gap:11px}
   .brand-mark{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:none;background:linear-gradient(150deg,#3BE6AC,#1FB07E);box-shadow:0 6px 18px rgba(53,224,161,.30),inset 0 1px 0 rgba(255,255,255,.35)}
   .brand-mark svg{width:21px;height:21px;stroke:#05231A;stroke-width:2.4;fill:none}
@@ -184,6 +186,8 @@
   .td-l{text-align:left!important}
   .cell-acct{color:var(--muted);font-size:12px}
   .ticker{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.01em}
+  .tk-row{display:flex;align-items:baseline;gap:8px}
+  .tk-name{color:var(--faint);font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
   .side{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:4px 9px;border-radius:6px}
   .side.long{color:var(--gain);background:var(--gain-dim)}
   .side.short{color:var(--loss);background:var(--loss-dim)}
@@ -571,7 +575,7 @@ function rrInner(p){
 function positionRow(p){
   const arrow = p.side==="long"?`<svg viewBox="0 0 24 24"><path d="M5 12l7-7 7 7M12 5v14"/></svg>`:`<svg viewBox="0 0 24 24"><path d="M19 12l-7 7-7-7M12 19V5"/></svg>`;
   return `<tr data-k="${p.account}|${p.symbol}">
-    <td class="td-l"><span class="ticker">${p.symbol}</span><div class="cell-acct">${p.account} · ${p.paper?'paper':'live'}</div></td>
+    <td class="td-l"><div class="tk-row"><span class="ticker">${p.symbol}</span>${p.name?`<span class="tk-name">${p.name}</span>`:''}</div><div class="cell-acct">${p.account} · ${p.paper?'paper':'live'}</div></td>
     <td class="td-l"><span class="side ${p.side}">${arrow}${p.side.toUpperCase()}</span></td>
     <td class="num">${Number(p.qty).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
     <td class="num">${money(p.entry)}</td>

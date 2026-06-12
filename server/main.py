@@ -61,6 +61,7 @@ def _require(cookie: Optional[str]) -> None:
 # ──────────────────────────────────────────────────────────────────────────
 _clients: dict[tuple, AccountClient] = {}
 _series_cache: dict[str, tuple[float, list]] = {}    # name -> (ts, series)
+_asset_names: dict[str, str] = {}                    # symbol -> company name (static)
 _payload_cache: dict[str, tuple[float, dict]] = {}   # name -> (ts, payload)
 _fills_cache: dict[tuple, tuple[float, list]] = {}   # (name, days) -> (ts, fills)
 
@@ -95,6 +96,25 @@ def _invalidate(name: str) -> None:
     _payload_cache.pop(name, None)
     for k in [k for k in _fills_cache if k[0] == name]:
         _fills_cache.pop(k, None)
+
+
+def _asset_name(client: Optional[AccountClient], symbol: str) -> str:
+    """Company name for a ticker (cached forever — asset names are static)."""
+    if symbol in _asset_names:
+        return _asset_names[symbol]
+    name = ""
+    if client is not None:
+        try:
+            name = str(getattr(client.trading.get_asset(symbol), "name", "") or "")
+        except Exception:
+            name = ""
+    # Trim verbose suffixes Alpaca appends, e.g. "… Common Stock".
+    for suf in (" Common Stock", " Common Shares", " Ordinary Shares", " Class A Common Stock"):
+        if name.endswith(suf):
+            name = name[: -len(suf)]
+            break
+    _asset_names[symbol] = name.strip()
+    return _asset_names[symbol]
 
 
 def _equity_series(cfg: AccountConfig) -> list:
@@ -222,10 +242,12 @@ def dashboard(scope: str = "all", fresh: int = 0, aldash_auth: Optional[str] = C
 
     # positions
     paper_map = {a.name: a.paper for a in accounts}
+    name_client = _client(ok[0]["cfg"]) if ok else None
     positions = []
     for r in all_rows:
         positions.append({
             "account": r.account, "paper": paper_map.get(r.account, True),
+            "name": _asset_name(name_client, r.symbol),
             "symbol": r.symbol, "side": r.side, "qty": abs(r.qty),
             "entry": r.avg_entry, "current": r.current_price, "worth": r.market_value,
             "sl": r.stop_loss, "tp": r.take_profit,
