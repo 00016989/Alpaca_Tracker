@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ALDash — Trading Dashboard</title>
 <meta name="theme-color" content="#090C12">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('aldash-theme')||'dark'}catch(e){}</script>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
@@ -23,6 +24,25 @@
     --live:#FF5470;--paper:#F2B544;--brand:#35E0A1;--radius:14px;
     --mono:'JetBrains Mono',ui-monospace,monospace;--display:'Space Grotesk',system-ui,sans-serif;--body:'Inter',system-ui,sans-serif;
   }
+  /* ---- light / cream theme (warm, Claude-style) ---- */
+  :root[data-theme="light"]{
+    --ink:#F4F1E9;--panel:#FCFBF7;--panel-2:#F0ECE2;--raised:#E5E0D3;
+    --line:rgba(64,52,38,.12);--line-strong:rgba(64,52,38,.20);
+    --text:#2A2620;--muted:#6E6557;--faint:#9A917F;
+    --gain:#0A9E66;--gain-dim:rgba(10,158,102,.13);--loss:#D34B3B;--loss-dim:rgba(211,75,59,.12);
+    --live:#D34B3B;--paper:#BC862A;--brand:#10A877;
+  }
+  [data-theme="light"] body::before{background:
+    radial-gradient(1100px 600px at 78% -8%,rgba(16,168,119,.06),transparent 60%),
+    radial-gradient(900px 500px at -5% 110%,rgba(190,134,42,.06),transparent 55%)}
+  [data-theme="light"] .ptable thead th{background:#EFEBE0}
+  [data-theme="light"] .ptable tbody tr:hover{background:rgba(0,0,0,.035)}
+  [data-theme="light"] .rr-scale .sl{color:#C5402F}
+  [data-theme="light"] .rr-scale .tp{color:#0B8F5E}
+  [data-theme="light"] .topbar{background:linear-gradient(120deg,rgba(16,168,119,.08),var(--panel) 45%)}
+  [data-theme="light"] .kpi.feature{background:linear-gradient(140deg,rgba(16,168,119,.10),var(--panel) 55%);border-color:rgba(16,168,119,.28)}
+  [data-theme="light"] .acct.active{background:linear-gradient(135deg,rgba(16,168,119,.14),rgba(16,168,119,.05));border-color:rgba(16,168,119,.45)}
+  [data-theme="light"] .acct.active .nm{color:#0B6A47}
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%}
   body{background:var(--ink);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
@@ -298,6 +318,7 @@
     </div>
     <button class="ghost-btn" id="refreshNow"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg> Refresh now</button>
     <div class="sidebar-spacer"></div>
+    <button class="ghost-btn" id="themeBtn"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36A5.39 5.39 0 0 1 12 3z"/></svg> <span id="themeLabel">Light mode</span></button>
     <button class="ghost-btn danger hidden" id="logout"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Log out</button>
   </aside>
 
@@ -383,7 +404,8 @@ function sparkSVG(series){
   let d="M"+xs(0).toFixed(1)+" "+ys(pts[0]).toFixed(1);
   pts.forEach((v,i)=>{ if(i>0) d+=" L"+xs(i).toFixed(1)+" "+ys(v).toFixed(1); });
   const area=d+` L${xs(pts.length-1).toFixed(1)} ${H-pad} L${xs(0).toFixed(1)} ${H-pad} Z`;
-  const col=pts[pts.length-1]>=pts[0]?"#35E0A1":"#FF647C";
+  const cs=getComputedStyle(document.documentElement);
+  const col=(pts[pts.length-1]>=pts[0]?cs.getPropertyValue('--gain'):cs.getPropertyValue('--loss')).trim()||"#35E0A1";
   return `<div class="spark-wrap" id="sparkWrap"><svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
     <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="${col}" stop-opacity=".30"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
@@ -727,6 +749,19 @@ el("addForm").addEventListener("submit",async e=>{
 // mobile drawer
 el("menuBtn").addEventListener("click",()=>el("appRoot").classList.toggle("nav-open"));
 el("scrim").addEventListener("click",()=>el("appRoot").classList.remove("nav-open"));
+
+// theme toggle (dark ⇄ cream)
+function applyTheme(t){
+  document.documentElement.dataset.theme=t;
+  try{localStorage.setItem("aldash-theme",t)}catch(e){}
+  const lbl=el("themeLabel"); if(lbl) lbl.textContent = t==="light"?"Dark mode":"Light mode";
+  const mc=document.querySelector('meta[name="theme-color"]'); if(mc) mc.setAttribute("content", t==="light"?"#F4F1E9":"#090C12");
+}
+el("themeBtn").addEventListener("click",()=>{
+  applyTheme(document.documentElement.dataset.theme==="light"?"dark":"light");
+  if(typeof refresh==="function") refresh();   // redraw sparkline in the new color
+});
+applyTheme(document.documentElement.dataset.theme||"dark");
 
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("/sw.js").catch(()=>{}); }
 boot();

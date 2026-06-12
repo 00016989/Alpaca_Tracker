@@ -1,6 +1,6 @@
 // Minimal service worker — enables PWA install + offline shell.
 // Network-first so live data never goes stale; falls back to cache offline.
-const CACHE = "aldash-v1";
+const CACHE = "aldash-v2";
 const SHELL = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", e => {
