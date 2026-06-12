@@ -776,7 +776,12 @@ el("themeBtn").addEventListener("click",()=>{
 });
 applyTheme(document.documentElement.dataset.theme||"dark");
 
-if("serviceWorker" in navigator){ navigator.serviceWorker.register("/sw.js").catch(()=>{}); }
+// No service worker — it caused stale-build caching. Unregister any old one
+// and clear its caches so the app always loads fresh.
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
+  if(window.caches&&caches.keys) caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{});
+}
 boot();
 </script>
 </body>
