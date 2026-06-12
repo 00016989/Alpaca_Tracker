@@ -34,7 +34,7 @@
   a{color:inherit}
 
   /* sidebar */
-  .sidebar{border-right:1px solid var(--line);padding:22px 18px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh;overflow-y:auto;background:linear-gradient(180deg,rgba(255,255,255,.012),transparent)}
+  .sidebar{border-right:1px solid var(--line);padding:22px 18px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--ink)}
   .brand{display:flex;align-items:center;gap:11px}
   .brand-mark{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:none;background:linear-gradient(150deg,#3BE6AC,#1FB07E);box-shadow:0 6px 18px rgba(53,224,161,.30),inset 0 1px 0 rgba(255,255,255,.35)}
   .brand-mark svg{width:21px;height:21px;stroke:#05231A;stroke-width:2.4;fill:none}
@@ -338,7 +338,7 @@ const signed = n => (Number(n)>=0?"+":"−")+money(n);
 const pct = n => (Number(n)>=0?"+":"−")+Math.abs(Number(n)||0).toFixed(2)+"%";
 const cls = n => Number(n)>0?"gain":Number(n)<0?"loss":"muted";
 const el = (id)=>document.getElementById(id);
-let STATE = {scope:"all", auto:true, intv:5, tab:"positions", positions:[], accounts:[]};
+let STATE = {scope:"all", auto:true, intv:5, tab:"positions", positions:[], accounts:[], posKeys:""};
 let timer=null;
 
 function toast(msg, ok=true){
@@ -486,11 +486,17 @@ function kpi(extra,icon,lbl,val,sub,subcls){
 
 /* ---------- positions tab ---------- */
 function renderPositions(d){
+  // If the same positions are already on screen, update values in place
+  // (smooth scroll, no flicker) instead of rebuilding the table.
+  const keys=d.positions.map(p=>p.account+"|"+p.symbol).join(",");
+  if(STATE.posKeys===keys && document.getElementById("posBody")){ updatePositions(d); return; }
+  STATE.posKeys=keys;
+
   const s=d.pstats;
   let stats=`<div class="pstats">
-    ${pstat('Total exposure',money(s.exposure),s.winning+' / '+s.total+' winning',cls(s.floating))}
-    ${pstat('Risk at SL','<span class="loss">'+signed(s.risk)+'</span>','if all stops hit','loss')}
-    ${pstat('Reward at TP','<span class="gain">'+signed(s.reward)+'</span>','if all targets hit','gain')}
+    ${pstat('Total exposure','<span id="ps-exp">'+money(s.exposure)+'</span>','<span id="ps-win">'+s.winning+' / '+s.total+'</span> winning',cls(s.floating))}
+    ${pstat('Risk at SL','<span class="loss" id="ps-risk">'+signed(s.risk)+'</span>','if all stops hit','loss')}
+    ${pstat('Reward at TP','<span class="gain" id="ps-rew">'+signed(s.reward)+'</span>','if all targets hit','gain')}
   </div>`;
 
   let rows="";
@@ -507,7 +513,7 @@ function renderPositions(d){
   el("tabContent").innerHTML=`${stats}
     <div class="table-card" style="margin-top:22px"><div class="table-wrap"><table class="ptable">
       <thead><tr><th class="l">Ticker</th><th class="l">Side</th><th>Qty</th><th>Entry</th><th>Current</th><th>Worth</th><th>Risk / Reward</th><th>Float PNL</th><th>PNL %</th></tr></thead>
-      <tbody>${rows}</tbody></table></div></div>${closeBlock}`;
+      <tbody id="posBody">${rows}</tbody></table></div></div>${closeBlock}`;
 
   if(d.positions.length){
     el("closeBtn").addEventListener("click",async ()=>{
@@ -521,28 +527,46 @@ function renderPositions(d){
 function pstat(lbl,val,sub,subcls){
   return `<div class="pstat"><div class="p-lbl">${lbl}</div><div class="p-val">${val}</div>${sub?`<div class="p-sub ${subcls}">${sub}</div>`:''}</div>`;
 }
+function rrInner(p){
+  if(p.sl==null||p.tp==null) return `<div class="rr-none">No SL / TP set</div>`;
+  const risk=Math.abs(p.sl_pnl||0), reward=Math.abs(p.tp_pnl||0), total=(risk+reward)||1;
+  const rw=risk/total*100, vw=reward/total*100;
+  const now=Math.max(2,Math.min(98,(p.current-p.sl)/((p.tp-p.sl)||1)*100));
+  return `<div class="rr-gauge">
+    <div class="rr-top"><span class="rr-ratio">${p.rr!=null?p.rr.toFixed(2):'—'}<small> R:R</small></span>
+      <span class="num" style="font-size:11px"><span class="loss">${signed(p.sl_pnl)}</span> / <span class="gain">${signed(p.tp_pnl)}</span></span></div>
+    <div class="rr-bar"><div class="risk" style="width:${rw}%"></div><div class="reward" style="width:${vw}%"></div><div class="rr-now" style="left:${now}%"></div></div>
+    <div class="rr-scale"><span class="sl">${money(p.sl)}</span><span class="now">now ${money(p.current)}</span><span class="tp">${money(p.tp)}</span></div></div>`;
+}
 function positionRow(p){
-  let rr;
-  if(p.sl==null||p.tp==null){ rr=`<div class="rr-none">No SL / TP set</div>`; }
-  else{
-    const risk=Math.abs(p.sl_pnl||0), reward=Math.abs(p.tp_pnl||0), total=(risk+reward)||1;
-    const rw=risk/total*100, vw=reward/total*100;
-    const now=Math.max(2,Math.min(98,(p.current-p.sl)/((p.tp-p.sl)||1)*100));
-    rr=`<div class="rr-gauge">
-      <div class="rr-top"><span class="rr-ratio">${p.rr!=null?p.rr.toFixed(2):'—'}<small> R:R</small></span>
-        <span class="num" style="font-size:11px"><span class="loss">${signed(p.sl_pnl)}</span> / <span class="gain">${signed(p.tp_pnl)}</span></span></div>
-      <div class="rr-bar"><div class="risk" style="width:${rw}%"></div><div class="reward" style="width:${vw}%"></div><div class="rr-now" style="left:${now}%"></div></div>
-      <div class="rr-scale"><span class="sl">${money(p.sl)}</span><span class="now">now ${money(p.current)}</span><span class="tp">${money(p.tp)}</span></div></div>`;
-  }
   const arrow = p.side==="long"?`<svg viewBox="0 0 24 24"><path d="M5 12l7-7 7 7M12 5v14"/></svg>`:`<svg viewBox="0 0 24 24"><path d="M19 12l-7 7-7-7M12 19V5"/></svg>`;
-  return `<tr>
+  return `<tr data-k="${p.account}|${p.symbol}">
     <td class="td-l"><span class="ticker">${p.symbol}</span><div class="cell-acct">${p.account} · ${p.paper?'paper':'live'}</div></td>
     <td class="td-l"><span class="side ${p.side}">${arrow}${p.side.toUpperCase()}</span></td>
     <td class="num">${Number(p.qty).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
-    <td class="num">${money(p.entry)}</td><td class="num">${money(p.current)}</td><td class="num">${money(p.worth)}</td>
-    <td class="rr-cell">${rr}</td>
-    <td class="num ${cls(p.float)}">${signed(p.float)}</td>
-    <td class="num ${cls(p.pct)}">${pct(p.pct)}</td></tr>`;
+    <td class="num">${money(p.entry)}</td>
+    <td class="num c-cur">${money(p.current)}</td>
+    <td class="num c-worth">${money(p.worth)}</td>
+    <td class="rr-cell c-rr">${rrInner(p)}</td>
+    <td class="num c-float ${cls(p.float)}">${signed(p.float)}</td>
+    <td class="num c-pct ${cls(p.pct)}">${pct(p.pct)}</td></tr>`;
+}
+// Update only the changing numbers in place — no DOM rebuild, so scrolling
+// the table during the 5s auto-refresh stays smooth (no flicker / jump).
+function updatePositions(d){
+  const s=d.pstats, setT=(id,v)=>{const e=el(id); if(e)e.textContent=v;};
+  setT("ps-exp",money(s.exposure)); setT("ps-win",s.winning+" / "+s.total);
+  setT("ps-risk",signed(s.risk)); setT("ps-rew",signed(s.reward));
+  const map={}; document.querySelectorAll("#posBody tr[data-k]").forEach(tr=>map[tr.dataset.k]=tr);
+  d.positions.forEach(p=>{
+    const tr=map[p.account+"|"+p.symbol]; if(!tr) return;
+    const q=sel=>tr.querySelector(sel);
+    if(q(".c-cur")) q(".c-cur").textContent=money(p.current);
+    if(q(".c-worth")) q(".c-worth").textContent=money(p.worth);
+    const f=q(".c-float"); if(f){ f.textContent=signed(p.float); f.className="num c-float "+cls(p.float); }
+    const pc=q(".c-pct"); if(pc){ pc.textContent=pct(p.pct); pc.className="num c-pct "+cls(p.pct); }
+    const rr=q(".c-rr"); if(rr) rr.innerHTML=rrInner(p);
+  });
 }
 
 /* ---------- other tabs ---------- */
