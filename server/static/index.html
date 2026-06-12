@@ -162,7 +162,11 @@
   .spark-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--brand);border:2px solid var(--panel);display:none;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(53,224,161,.7)}
   .spark-tip{position:absolute;transform:translate(-50%,calc(-100% - 10px));background:var(--panel-2);border:1px solid var(--line-strong);border-radius:8px;padding:5px 10px;font-family:var(--mono);font-size:12px;font-weight:600;white-space:nowrap;display:none;pointer-events:none;box-shadow:0 8px 18px rgba(0,0,0,.55);z-index:5}
 
-  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:0;z-index:20;background:var(--ink);padding-top:6px}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:0;z-index:20;padding-top:6px;
+    background:linear-gradient(180deg, rgba(53,224,161,.14), transparent 78%), var(--ink);
+    box-shadow:0 12px 22px -14px rgba(53,224,161,.45)}
+  [data-theme="light"] .tabs{background:linear-gradient(180deg, rgba(16,168,119,.12), transparent 78%), var(--ink);
+    box-shadow:0 12px 22px -14px rgba(16,168,119,.32)}
   .tab{display:flex;align-items:center;gap:8px;padding:11px 16px;cursor:pointer;color:var(--muted);font-size:13.5px;font-weight:500;font-family:var(--body);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s;white-space:nowrap}
   .tab svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.7;fill:none}
   .tab:hover{color:var(--text)}
