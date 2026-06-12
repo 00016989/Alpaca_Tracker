@@ -44,6 +44,9 @@
   [data-theme="light"] .acct.active{background:linear-gradient(135deg,rgba(16,168,119,.14),rgba(16,168,119,.05));border-color:rgba(16,168,119,.45)}
   [data-theme="light"] .acct.active .nm{color:#0B6A47}
   *{box-sizing:border-box;margin:0;padding:0}
+  /* hide scrollbars for a clean app feel (scrolling still works) */
+  *{scrollbar-width:none;-ms-overflow-style:none}
+  *::-webkit-scrollbar{width:0;height:0;display:none}
   html{-webkit-text-size-adjust:100%}
   body{background:var(--ink);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
   body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
