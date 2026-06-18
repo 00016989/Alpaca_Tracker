@@ -21,7 +21,7 @@ from fastapi import Body, Cookie, FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from aldash import store
+from aldash import mirror, store
 from aldash.client import AccountClient
 from aldash.config import AccountConfig, load_accounts, read_secrets
 from aldash.positions import consolidate
@@ -442,6 +442,52 @@ def delete_account(name: str, aldash_auth: Optional[str] = Cookie(None)):
     if cfg:
         store.remove(cfg)
     return {"ok": True}
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Mirror / copy-trading
+# ──────────────────────────────────────────────────────────────────────────
+@app.get("/api/mirror")
+def mirror_get(aldash_auth: Optional[str] = Cookie(None)):
+    _require(aldash_auth)
+    accounts = _accounts()
+    return {
+        "status": mirror.status(),
+        "sources": [a.name for a in accounts if a.paper],   # paper accounts feed the mirror
+        "targets": [a.name for a in accounts if not a.paper],  # live accounts receive copies
+    }
+
+
+@app.post("/api/mirror")
+def mirror_set(payload: dict = Body(...), aldash_auth: Optional[str] = Cookie(None)):
+    _require(aldash_auth)
+    cfg = mirror.save_config(
+        enabled=bool(payload.get("enabled", False)),
+        source=str(payload.get("source", "")),
+        targets=list(payload.get("targets", []) or []),
+        divisor=float(payload.get("divisor", 100) or 100),
+    )
+    # Run one pass immediately so the UI reflects the new settings without waiting.
+    try:
+        mirror.reconcile(_client, _find)
+    except Exception:
+        pass
+    return {"ok": True, "config": cfg}
+
+
+@app.on_event("startup")
+async def _start_mirror_loop():
+    import asyncio
+
+    async def loop():
+        while True:
+            try:
+                await asyncio.to_thread(mirror.reconcile, _client, _find)
+            except Exception:
+                pass
+            await asyncio.sleep(6)
+
+    asyncio.create_task(loop())
 
 
 # ──────────────────────────────────────────────────────────────────────────

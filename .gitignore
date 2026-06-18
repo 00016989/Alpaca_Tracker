@@ -2,6 +2,8 @@
 .streamlit/secrets.toml
 .env
 accounts.json
+mirror.json
+mirror_state.json
 
 # Python
 __pycache__/

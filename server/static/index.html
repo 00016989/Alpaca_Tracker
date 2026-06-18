@@ -177,6 +177,22 @@
   .pstat .p-val{font-family:var(--mono);font-size:21px;font-weight:600;letter-spacing:-.02em}
   .pstat .p-sub{font-family:var(--mono);font-size:11.5px;font-weight:500;margin-top:5px}
 
+  /* mirror tab */
+  .mir-chks{display:flex;flex-wrap:wrap;gap:10px}
+  .mir-chk{display:flex;align-items:center;gap:7px;padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);font-size:13px;cursor:pointer;user-select:none}
+  .mir-chk input{accent-color:var(--brand);width:15px;height:15px}
+  .mir-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:20px;flex-wrap:wrap}
+  .mir-switch{display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
+  .mir-switch input{display:none}
+  .mir-slider{position:relative;width:46px;height:26px;border-radius:14px;background:var(--line);transition:background .18s;flex:none}
+  .mir-slider::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s}
+  .mir-switch input:checked + .mir-slider{background:var(--gain)}
+  .mir-switch input:checked + .mir-slider::after{transform:translateX(20px)}
+  .mir-switch-lbl{font-size:13.5px;font-weight:600}
+  .mir-statbar{font-size:13px;color:var(--muted);padding:2px 2px 4px}
+  .mir-log-line{font-family:var(--mono);font-size:12px;color:var(--muted);padding:3px 0;border-bottom:1px solid var(--line)}
+  .mir-log-line:last-child{border-bottom:none}
+
   .table-card{border:1px solid var(--line);border-radius:18px;background:var(--panel);overflow:hidden}
   .table-wrap{overflow-x:auto}
   .ptable{width:100%;border-collapse:collapse;font-size:13px}
@@ -359,6 +375,7 @@
       <button class="tab" data-tab="orders"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8 9h8M8 13h8M8 17h5"/></svg>Open Orders</button>
       <button class="tab" data-tab="tradelog"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 2M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/></svg>Trade Log</button>
       <button class="tab" data-tab="trade"><svg viewBox="0 0 24 24"><path d="M7 3v18M17 3v18M3 8h8M3 16h8M13 8h8M13 16h8"/></svg>Trade</button>
+      <button class="tab" data-tab="mirror"><svg viewBox="0 0 24 24"><path d="M4 7h7M4 7l3-3M4 7l3 3M20 17h-7M20 17l-3-3M20 17l-3 3"/></svg>Mirror</button>
       <button class="tab" data-tab="news"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h6M7 16h8"/></svg>News</button>
       <div class="tab-ind" id="tabInd"></div>
     </div>
@@ -686,6 +703,72 @@ function renderTrade(){
     catch(err){ toast(err.message,false); }
   });
 }
+/* ---------- mirror (copy-trading) tab ---------- */
+async function renderMirror(){
+  el("tabContent").innerHTML=`<div class="empty">Loading mirror…</div>`;
+  try{
+    const d=await api("/api/mirror");
+    if(STATE.tab!=="mirror") return;
+    const c=d.status;
+    const srcOpts=d.sources.length
+      ? d.sources.map(s=>`<option value="${s}" ${s===c.source?'selected':''}>${s}</option>`).join("")
+      : `<option value="">(no paper accounts)</option>`;
+    const tgts=d.targets.length
+      ? d.targets.map(t=>`<label class="mir-chk"><input type="checkbox" value="${t}" ${c.targets.includes(t)?'checked':''}> ${t}</label>`).join("")
+      : `<div class="faint">No live accounts yet — add one in the sidebar.</div>`;
+    el("tabContent").innerHTML=`
+      <div class="table-card" style="padding:22px">
+        <div class="section-label" style="margin-bottom:6px">Copy paper trades to live — long only, qty ÷ divisor, no SL / TP</div>
+        <div class="faint" style="font-size:12.5px;margin-bottom:18px;line-height:1.5">When the source account opens a long, each target buys <b>shares ÷ divisor</b> as a market order. When the source closes (or trims) the position, the target follows. Runs automatically every few seconds while enabled.</div>
+        <div class="grid-form">
+          <div class="field"><label>Source (paper)</label><select id="mSrc">${srcOpts}</select></div>
+          <div class="field"><label>Divisor</label><input type="number" id="mDiv" value="${c.divisor||100}" step="1" min="1"></div>
+        </div>
+        <div class="field" style="margin-top:14px"><label>Targets (live)</label><div class="mir-chks">${tgts}</div></div>
+        <div class="mir-row">
+          <label class="mir-switch"><input type="checkbox" id="mEnabled" ${c.enabled?'checked':''}><span class="mir-slider"></span><span class="mir-switch-lbl">Auto-trading ${c.enabled?'ON':'OFF'}</span></label>
+          <button class="btn-brand" id="mSave">Save &amp; apply</button>
+        </div>
+      </div>
+      <div id="mStatus" style="margin-top:22px"></div>`;
+    el("mEnabled").addEventListener("change",e=>{
+      e.target.closest(".mir-switch").querySelector(".mir-switch-lbl").textContent="Auto-trading "+(e.target.checked?"ON":"OFF");
+    });
+    el("mSave").addEventListener("click",saveMirror);
+    renderMirrorStatus(c);
+  }catch(err){ el("tabContent").innerHTML=`<div class="empty loss">${err.message}</div>`; }
+}
+async function saveMirror(){
+  const targets=[...document.querySelectorAll("#tabContent .mir-chks input:checked")].map(i=>i.value);
+  const body={enabled:el("mEnabled").checked,source:el("mSrc").value,targets,divisor:parseFloat(el("mDiv").value)||100};
+  if(body.enabled && (!body.source || !targets.length)){ toast("Pick a source and at least one target to enable",false); return; }
+  try{ await api("/api/mirror",{method:"POST",body:JSON.stringify(body)}); toast("Mirror settings saved"); renderMirror(); }
+  catch(err){ toast(err.message,false); }
+}
+function renderMirrorStatus(c){
+  const box=el("mStatus"); if(!box||!c) return;
+  const stateLbl=c.enabled?(c.running?'<span class="gain">● running</span>':'<span class="faint">enabled</span>'):'<span class="faint">off</span>';
+  let mir="";
+  (c.mirrors||[]).forEach(m=>{
+    let rows="";
+    if(m.error) rows=`<tr><td colspan="4" class="loss td-l" style="padding:16px">${m.error}</td></tr>`;
+    else if(!m.positions.length) rows=`<tr><td colspan="4" class="faint" style="padding:18px;text-align:center">No mirrored positions.</td></tr>`;
+    else m.positions.forEach(p=>{
+      const sc=p.status==='err'?'loss':(p.status==='ok'?'faint':'gain');
+      rows+=`<tr><td class="td-l"><span class="ticker">${p.symbol}</span></td><td class="num">${p.target_qty}</td><td class="num">${p.live_qty}</td>
+        <td class="num"><span class="${sc}">${p.status}</span>${p.error?` <span class="loss" style="font-size:11px">${p.error}</span>`:''}</td></tr>`;
+    });
+    mir+=`<div class="table-card" style="margin-top:14px"><div style="padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px"><b>${m.target}</b></div>
+      <div class="table-wrap"><table class="ptable"><thead><tr><th class="l">Ticker</th><th>Target qty</th><th>Live qty</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  });
+  const log=(c.log||[]).slice(-12).reverse().map(l=>`<div class="mir-log-line">${l}</div>`).join("")||`<div class="faint">No activity yet.</div>`;
+  box.innerHTML=`<div class="mir-statbar">Status: ${stateLbl}${c.last_run?` · last run ${String(c.last_run).slice(11,19)} UTC`:''}${c.last_error?` · <span class="loss">${c.last_error}</span>`:''}</div>
+    ${mir}
+    <div class="table-card" style="margin-top:14px;padding:14px 16px"><div class="section-label" style="margin-bottom:8px">Activity</div>${log}</div>`;
+}
+async function refreshMirrorStatus(){
+  try{ const d=await api("/api/mirror"); if(STATE.tab==="mirror") renderMirrorStatus(d.status); }catch(e){}
+}
 async function renderNews(){
   el("tabContent").innerHTML=`<div class="empty">Loading news…</div>`;
   try{
@@ -737,6 +820,7 @@ function reloadTab(){
   else if(STATE.tab==="tradelog") renderTradelog();
   else if(STATE.tab==="news") renderNews();
   else if(STATE.tab==="trade") renderTrade();
+  else if(STATE.tab==="mirror") renderMirror();
 }
 function setNav(open){ el("appRoot").classList.toggle("nav-open",open); document.body.style.overflow=open?"hidden":""; }
 function closeNav(){ setNav(false); }
@@ -752,7 +836,7 @@ function reschedule(){
   if(timer) clearInterval(timer);
   if(warmTimer) clearInterval(warmTimer);
   if(STATE.auto){
-    timer=setInterval(()=>{ if(STATE.tab==="positions") refresh(true); }, STATE.intv*1000);
+    timer=setInterval(()=>{ if(STATE.tab==="positions") refresh(true); else if(STATE.tab==="mirror") refreshMirrorStatus(); }, STATE.intv*1000);
     warmTimer=setInterval(warmAll, 8000);   // keep all accounts warm → instant switches
   }
 }
