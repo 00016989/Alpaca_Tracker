@@ -836,7 +836,17 @@ function bumpIdle(){            // activity happened — hide + restart the time
   if(STATE.tab==="mirror") idleTimer=setTimeout(showIdle, IDLE_MS);
 }
 function stopIdle(){ if(idleTimer) clearTimeout(idleTimer); idleTimer=null; hideIdle(); }
-["mousemove","mousedown","keydown","touchstart","touchmove","wheel","scroll"].forEach(ev=>
+// Only count a mousemove as activity if the pointer ACTUALLY moved a few px.
+// The 5s auto-refresh rewrites the status panel's innerHTML, which makes some
+// browsers fire a phantom mousemove at the same coords when the cursor rests
+// over it — that would otherwise reset the timer forever and the saver never shows.
+let _mx=null,_my=null;
+function onMove(e){
+  if(_mx!=null && Math.abs(e.clientX-_mx)<4 && Math.abs(e.clientY-_my)<4) return;
+  _mx=e.clientX; _my=e.clientY; bumpIdle();
+}
+window.addEventListener("mousemove", onMove, {passive:true});
+["mousedown","keydown","touchstart","touchmove","wheel","scroll","click"].forEach(ev=>
   window.addEventListener(ev, bumpIdle, {passive:true}));
 document.addEventListener("visibilitychange",()=>{ if(document.hidden) stopIdle(); else bumpIdle(); });
 async function renderNews(){
