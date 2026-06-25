@@ -808,7 +808,7 @@ async function refreshMirrorStatus(){
 }
 
 /* ---------- idle screensaver — starfield warp (whole app) ---------- */
-const IDLE_MS=5000;            // show after ~5s with no activity
+const IDLE_MS=10000;           // show after ~10s with no activity
 let idleTimer=null, idleOn=false;
 function paintIdleStatus(){
   const s=el("idleStatus"), c=LAST_MIRROR; if(!s) return;
