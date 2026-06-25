@@ -71,14 +71,18 @@ def _from_secrets() -> List[AccountConfig]:
 
 
 def _from_env() -> List[AccountConfig]:
-    """Fallback: ALDASH_ACCOUNT_1_KEY / _SECRET / _NAME / _PAPER, incrementing index."""
+    """Fallback: ALDASH_ACCOUNT_<i>_KEY / _SECRET / _NAME / _PAPER.
+
+    We scan a fixed range and *skip* empty slots rather than stopping at the
+    first gap, so removing one account (e.g. deleting only ACCOUNT_2_*) doesn't
+    silently drop every higher-numbered account after it.
+    """
     accounts: List[AccountConfig] = []
-    i = 1
-    while True:
+    for i in range(1, 51):
         key = os.getenv(f"ALDASH_ACCOUNT_{i}_KEY")
         secret = os.getenv(f"ALDASH_ACCOUNT_{i}_SECRET")
         if not key or not secret:
-            break
+            continue
         accounts.append(
             AccountConfig(
                 name=os.getenv(f"ALDASH_ACCOUNT_{i}_NAME", f"Account {i}"),
@@ -87,7 +91,6 @@ def _from_env() -> List[AccountConfig]:
                 paper=os.getenv(f"ALDASH_ACCOUNT_{i}_PAPER", "true").lower() != "false",
             )
         )
-        i += 1
     return accounts
 
 

@@ -22,15 +22,7 @@ services:
         sync: false
       - key: ALDASH_ACCOUNT_1_SECRET
         sync: false
-      # ---- Account 2 ----
-      - key: ALDASH_ACCOUNT_2_NAME
-        value: "cv (Paper)"
-      - key: ALDASH_ACCOUNT_2_PAPER
-        value: "true"
-      - key: ALDASH_ACCOUNT_2_KEY
-        sync: false
-      - key: ALDASH_ACCOUNT_2_SECRET
-        sync: false
+      # ---- Account 2 (cv) removed ----
       # ---- Account 3 ----
       - key: ALDASH_ACCOUNT_3_NAME
         value: "cnv (Paper)"
