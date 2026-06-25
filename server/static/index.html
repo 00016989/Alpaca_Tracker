@@ -193,32 +193,28 @@
   .mir-log-line{font-family:var(--mono);font-size:12px;color:var(--muted);padding:3px 0;border-bottom:1px solid var(--line)}
   .mir-log-line:last-child{border-bottom:none}
 
-  /* idle screensaver (Mirror tab) */
+  /* idle screensaver — starfield warp (whole app) */
   #idleScreen{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;
-    background:radial-gradient(120% 120% at 50% 40%,rgba(0,0,0,.10),var(--ink) 70%),var(--ink);
-    opacity:0;visibility:hidden;transition:opacity .7s ease,visibility .7s;pointer-events:none;overflow:hidden}
+    background:var(--ink);opacity:0;visibility:hidden;transition:opacity .6s ease,visibility .6s;pointer-events:none;overflow:hidden}
   #idleScreen.show{opacity:1;visibility:visible}
-  .idle-glow{position:absolute;width:min(60vw,640px);height:min(60vw,640px);border-radius:50%;filter:blur(80px);opacity:.5;will-change:transform}
-  .idle-glow.g1{background:radial-gradient(circle,var(--brand),transparent 65%);animation:idleDrift1 22s ease-in-out infinite}
-  .idle-glow.g2{background:radial-gradient(circle,var(--paper),transparent 65%);opacity:.28;animation:idleDrift2 28s ease-in-out infinite}
-  @keyframes idleDrift1{0%,100%{transform:translate(-22%,-16%)}50%{transform:translate(20%,14%)}}
-  @keyframes idleDrift2{0%,100%{transform:translate(24%,18%)}50%{transform:translate(-18%,-20%)}}
-  .idle-center{position:relative;text-align:center;animation:idleBreathe 5.5s ease-in-out infinite}
-  @keyframes idleBreathe{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.045);opacity:1}}
+  #idleStars{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .idle-center{position:relative;z-index:2;text-align:center;transform:scale(.94);opacity:0;
+    transition:transform .9s cubic-bezier(.2,.7,.2,1) .15s,opacity .9s ease .15s}
+  #idleScreen.show .idle-center{transform:scale(1);opacity:1}
   .idle-mark{font-family:var(--display);font-weight:700;font-size:clamp(48px,11vw,118px);letter-spacing:-.03em;
-    line-height:1;color:var(--text);text-shadow:0 0 60px rgba(53,224,161,.18)}
+    line-height:1;color:var(--text);text-shadow:0 0 12px var(--ink),0 0 80px rgba(53,224,161,.3)}
   .idle-mark span{color:var(--brand)}
   .idle-sub{margin-top:14px;font-family:var(--mono);font-size:clamp(11px,1.6vw,15px);letter-spacing:.42em;
-    text-transform:uppercase;color:var(--muted);padding-left:.42em}
+    text-transform:uppercase;color:var(--muted);padding-left:.42em;text-shadow:0 0 10px var(--ink)}
   .idle-status{margin-top:20px;display:inline-flex;align-items:center;gap:9px;font-size:13px;color:var(--faint);
-    padding:7px 15px;border:1px solid var(--line);border-radius:999px;background:rgba(148,163,184,.04)}
+    padding:7px 15px;border:1px solid var(--line);border-radius:999px;background:rgba(9,12,18,.55);backdrop-filter:blur(2px)}
   .idle-dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
   .idle-status.on .idle-dot{background:var(--gain);box-shadow:0 0 10px var(--gain);animation:idlePulse 1.8s ease-in-out infinite}
   @keyframes idlePulse{0%,100%{opacity:1}50%{opacity:.35}}
   .idle-hint{position:absolute;bottom:34px;left:0;right:0;text-align:center;font-size:11px;letter-spacing:.22em;
-    text-transform:uppercase;color:var(--faint);opacity:.55;animation:idleHint 3s ease-in-out infinite}
+    text-transform:uppercase;color:var(--faint);opacity:.55;animation:idleHint 3s ease-in-out infinite;text-shadow:0 0 10px var(--ink)}
   @keyframes idleHint{0%,100%{opacity:.25}50%{opacity:.7}}
-  @media (prefers-reduced-motion:reduce){.idle-glow,.idle-center,.idle-status.on .idle-dot,.idle-hint{animation:none}}
+  @media (prefers-reduced-motion:reduce){.idle-center,.idle-status.on .idle-dot,.idle-hint{animation:none;transition:none}}
 
   .table-card{border:1px solid var(--line);border-radius:18px;background:var(--panel);overflow:hidden}
   .table-wrap{overflow-x:auto}
@@ -413,13 +409,12 @@
 
 <div id="toast"></div>
 
-<!-- idle screensaver (Mirror tab) -->
+<!-- idle screensaver (whole app) -->
 <div id="idleScreen" aria-hidden="true">
-  <div class="idle-glow g1"></div>
-  <div class="idle-glow g2"></div>
+  <canvas id="idleStars"></canvas>
   <div class="idle-center">
     <div class="idle-mark">AL<span>Dash</span></div>
-    <div class="idle-sub">mirror engine</div>
+    <div class="idle-sub">automated trading</div>
     <div class="idle-status" id="idleStatus"><span class="idle-dot"></span>standing by</div>
   </div>
   <div class="idle-hint">move to resume</div>
@@ -446,9 +441,9 @@ async function api(path, opts={}){
 }
 
 /* ---------- auth ---------- */
-function showLogin(){ el("login").classList.remove("hidden"); el("appRoot").classList.add("hidden"); }
+function showLogin(){ el("login").classList.remove("hidden"); el("appRoot").classList.add("hidden"); stopIdle(); }
 function showApp(){ el("login").classList.add("hidden"); el("appRoot").classList.remove("hidden");
-  setTimeout(moveTabInd,80); requestAnimationFrame(moveTabInd); }
+  setTimeout(moveTabInd,80); requestAnimationFrame(moveTabInd); bumpIdle(); }
 async function boot(){
   const me = await fetch("/api/me").then(r=>r.json());
   if(me.protected) el("logout").classList.remove("hidden");
@@ -775,7 +770,6 @@ async function renderMirror(){
     });
     el("mSave").addEventListener("click",saveMirror);
     renderMirrorStatus(c);
-    bumpIdle();   // arm the screensaver once the tab is loaded
   }catch(err){ el("tabContent").innerHTML=`<div class="empty loss">${err.message}</div>`; }
 }
 async function saveMirror(){
@@ -813,7 +807,7 @@ async function refreshMirrorStatus(){
   try{ const d=await api("/api/mirror"); if(STATE.tab==="mirror") renderMirrorStatus(d.status); }catch(e){}
 }
 
-/* ---------- idle screensaver (Mirror tab only) ---------- */
+/* ---------- idle screensaver — starfield warp (whole app) ---------- */
 const IDLE_MS=8000;            // show after ~8s with no activity
 let idleTimer=null, idleOn=false;
 function paintIdleStatus(){
@@ -822,20 +816,76 @@ function paintIdleStatus(){
   s.classList.toggle("on", !!live);
   const n = c && c.targets ? c.targets.length : 0;
   s.innerHTML=`<span class="idle-dot"></span>${
-    !c||!c.enabled ? "auto-trading off"
-    : (live ? `mirroring → ${n} live account${n===1?"":"s"}` : "enabled")}`;
+    !c ? "ALDash"
+    : (!c.enabled ? "auto-trading off"
+    : (live ? `mirroring → ${n} live account${n===1?"":"s"}` : "auto-trading enabled"))}`;
 }
+
+/* --- starfield engine (only animates while the saver is visible) --- */
+const STARS=[]; let starCv=null,starCtx=null,starRAF=null,starCx=0,starCy=0,starSpread=1,starInk="#090C12",starCol="#EAEDF3",starBrand="#35E0A1";
+function _mkStar(seedZ){ return {x:Math.random()*2-1,y:Math.random()*2-1,z:seedZ?Math.random()*0.9+0.05:1,pz:0}; }
+function starResize(){
+  if(!starCv) return;
+  const w=window.innerWidth,h=window.innerHeight,dpr=Math.min(window.devicePixelRatio||1,2);
+  starCv.width=w*dpr; starCv.height=h*dpr; starCtx.setTransform(dpr,0,0,dpr,0,0);
+  starCx=w/2; starCy=h/2; starSpread=Math.max(w,h)*0.65;
+}
+function starInit(){
+  starCv=el("idleStars"); if(!starCv) return;
+  starCtx=starCv.getContext("2d");
+  const cs=getComputedStyle(document.documentElement);
+  starInk=getComputedStyle(document.body).backgroundColor||"#090C12";   // "rgb(r,g,b)"
+  starCol=(cs.getPropertyValue("--text").trim())||"#EAEDF3";
+  starBrand=(cs.getPropertyValue("--brand").trim())||"#35E0A1";
+  starResize();
+  STARS.length=0;
+  const n=Math.max(160,Math.min(520,Math.floor(window.innerWidth*window.innerHeight/3400)));
+  for(let i=0;i<n;i++) STARS.push(_mkStar(true));
+}
+function _inkTrail(){ // turn "rgb(r,g,b)" into a translucent fade for motion trails
+  const m=starInk.match(/\d+/g);
+  return m ? `rgba(${m[0]},${m[1]},${m[2]},0.30)` : "rgba(9,12,18,0.30)";
+}
+function starStep(){
+  const w=window.innerWidth,h=window.innerHeight,speed=0.011;
+  starCtx.fillStyle=_inkTrail(); starCtx.fillRect(0,0,w,h);
+  for(const s of STARS){
+    s.pz=s.z; s.z-=speed;
+    if(s.z<=0.03){ const ns=_mkStar(false); s.x=ns.x; s.y=ns.y; s.z=1; s.pz=1; continue; }
+    const sx=starCx+(s.x/s.z)*starSpread, sy=starCy+(s.y/s.z)*starSpread;
+    const px=starCx+(s.x/s.pz)*starSpread, py=starCy+(s.y/s.pz)*starSpread;
+    const depth=1-s.z;
+    starCtx.globalAlpha=Math.min(1,depth*1.4+0.05);
+    starCtx.strokeStyle=depth>0.7?starBrand:starCol;   // closest stars flare brand-green
+    starCtx.lineWidth=Math.max(0.6,depth*2.6);
+    starCtx.beginPath(); starCtx.moveTo(px,py); starCtx.lineTo(sx,sy); starCtx.stroke();
+  }
+  starCtx.globalAlpha=1;
+}
+function starLoop(){ if(!idleOn) return; starStep(); starRAF=requestAnimationFrame(starLoop); }
+
 function showIdle(){
-  if(STATE.tab!=="mirror"||idleOn) return;
-  idleOn=true; paintIdleStatus(); el("idleScreen").classList.add("show");
+  if(idleOn) return;
+  idleOn=true;
+  starInit(); if(starRAF) cancelAnimationFrame(starRAF); starLoop();
+  paintIdleStatus();
+  // refresh the mirror status pill so it's accurate from any tab
+  api("/api/mirror").then(d=>{ LAST_MIRROR=d.status; if(idleOn) paintIdleStatus(); }).catch(()=>{});
+  el("idleScreen").classList.add("show");
 }
-function hideIdle(){ if(idleOn){ idleOn=false; el("idleScreen").classList.remove("show"); } }
+function hideIdle(){
+  if(!idleOn) return;
+  idleOn=false;
+  if(starRAF){ cancelAnimationFrame(starRAF); starRAF=null; }
+  el("idleScreen").classList.remove("show");
+}
 function bumpIdle(){            // activity happened — hide + restart the timer
   hideIdle();
   if(idleTimer) clearTimeout(idleTimer);
-  if(STATE.tab==="mirror") idleTimer=setTimeout(showIdle, IDLE_MS);
+  idleTimer=setTimeout(showIdle, IDLE_MS);
 }
 function stopIdle(){ if(idleTimer) clearTimeout(idleTimer); idleTimer=null; hideIdle(); }
+window.addEventListener("resize",()=>{ if(idleOn) starResize(); });
 // Only count a mousemove as activity if the pointer ACTUALLY moved a few px.
 // The 5s auto-refresh rewrites the status panel's innerHTML, which makes some
 // browsers fire a phantom mousemove at the same coords when the cursor rests
@@ -879,7 +929,6 @@ el("tabs").querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
   t.classList.add("active"); STATE.tab=t.dataset.tab; moveTabInd(); fadeTab();
   // keep the newly-active tab in view (and the indicator with it)
   t.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"});
-  if(STATE.tab==="mirror") bumpIdle(); else stopIdle();
   if(STATE.tab==="positions") refresh(); else reloadTab();
 }));
 
